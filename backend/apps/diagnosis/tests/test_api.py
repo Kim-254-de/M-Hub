@@ -52,7 +52,7 @@ def no_task_dispatch():
 
 
 def test_requires_authentication(case):
-    assert APIClient().get(url(case)).status_code == 403
+    assert APIClient().get(url(case)).status_code == 401
 
 
 def test_other_farmer_cannot_see_case(case, other_farmer):

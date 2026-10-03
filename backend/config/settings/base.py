@@ -4,6 +4,7 @@ All environment-specific values are read from environment variables (or a
 local ``.env`` file in development). Nothing secret is hard-coded here.
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third party
     "rest_framework",
+    "rest_framework_simplejwt",
     "drf_spectacular",
     # Local
     "apps.core",
@@ -105,6 +107,8 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        # JWT for the mobile app; sessions for the admin and browsable API.
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -117,8 +121,16 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "user": env("API_THROTTLE_USER", default="120/min"),
         "ai_diagnosis_retry": env("API_THROTTLE_AI_RETRY", default="10/hour"),
+        # Registration and login, per client IP. PINs are short, so keep this tight.
+        "auth": env("API_THROTTLE_AUTH", default="10/min"),
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.exception_handler",
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_MINUTES", default=60)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_DAYS", default=30)),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 SPECTACULAR_SETTINGS = {
@@ -166,6 +178,22 @@ DIAGNOSIS = {
     # Minimum probability for the crop to be accepted as tomato.
     "MIN_TOMATO_PROBABILITY": env.float("DIAGNOSIS_MIN_TOMATO", default=0.3),
     "MAX_ATTEMPTS": env.int("DIAGNOSIS_MAX_ATTEMPTS", default=5),
+}
+
+# --- Detect (photo capture) ------------------------------------------------
+# Local checks run on upload, before any provider credit is spent. The
+# plant/tomato check comes from the AI diagnosis run (needs_retake).
+
+DETECT = {
+    # Shortest side in pixels. Phone cameras are far above this; it catches thumbnails and screenshots.
+    "MIN_PHOTO_SIDE": env.int("DETECT_MIN_PHOTO_SIDE", default=480),
+    # Variance of the Laplacian on a greyscale copy scaled to ANALYSIS_SIZE. Lower means blurrier.
+    # Tune on real field photos; values well under 100 are usually out of focus or shaken.
+    "MIN_SHARPNESS": env.float("DETECT_MIN_SHARPNESS", default=60.0),
+    # Mean greyscale brightness, 0-255.
+    "MIN_BRIGHTNESS": env.float("DETECT_MIN_BRIGHTNESS", default=40.0),
+    "ANALYSIS_SIZE": env.int("DETECT_ANALYSIS_SIZE", default=1024),
+    "MAX_PHOTO_BYTES": env.int("DETECT_MAX_PHOTO_BYTES", default=10 * 1024 * 1024),
 }
 
 # --- Logging ----------------------------------------------------------------

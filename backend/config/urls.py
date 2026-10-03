@@ -3,6 +3,8 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 api_v1 = [
+    path("", include("apps.accounts.urls")),
+    path("", include("apps.cases.urls")),
     path("", include("apps.diagnosis.urls")),
 ]
 
