@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from django.conf import settings
 
+from apps.accounts.models import FarmerProfile
 from apps.prescriptions.messages import sms_quantity
 
 from .messages import REVIEW_ASSIGNED, ROUND_NAMES, farmer_message, to_gsm
@@ -22,6 +23,8 @@ def _language(user) -> str:
 
 def _to_farmer(case, key: str, purpose: str, source_ref: str, **values):
     farmer = case.farmer
+    if FarmerProfile.objects.filter(user=farmer, notifications_enabled=False).exists():
+        return None  # the farmer turned SMS off in the app's settings
     return queue_sms(
         to=farmer.phone,
         body=farmer_message(key, _language(farmer), **values),

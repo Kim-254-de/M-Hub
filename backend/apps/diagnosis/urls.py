@@ -7,6 +7,7 @@ from .views import (
     CaseAIDiagnosisView,
     CaseDiagnosisView,
     DiseaseListView,
+    OutbreakAlertView,
     PeerCaseListView,
     PeerCommentView,
 )
@@ -21,5 +22,6 @@ urlpatterns = [
     path("cases/<uuid:case_id>/peer-comments/", PeerCommentView.as_view(), name="case-peer-comments"),
     path("peer/cases/", PeerCaseListView.as_view(), name="peer-cases"),
     path("diseases/", DiseaseListView.as_view(), name="diseases"),
+    path("alerts/nearby/", OutbreakAlertView.as_view(), name="outbreak-alerts"),
     *router.urls,
 ]

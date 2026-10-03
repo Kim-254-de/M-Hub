@@ -72,6 +72,8 @@ class Disease(TimeStampedModel):
     # Reviewed, product-free first steps shown while the farmer waits for an agrovet, by language
     # code: {"en": ["...", ...], "sw": [...]}. Empty: the general steps in diagnosis.messages are shown.
     safe_actions = models.JSONField(default=dict, blank=True)
+    # Reviewed two-line explanation for farmers, by language code: {"en": "...", "sw": "..."}.
+    explanations = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta(TimeStampedModel.Meta):
@@ -84,6 +86,11 @@ class Disease(TimeStampedModel):
         """The name in the first language the farmer reads (settings.LANGUAGE_FALLBACKS), else ``name``."""
         names = self.local_names or {}
         return next((names[lang] for lang in language_chain(language) if names.get(lang)), self.name)
+
+    def explanation(self, language: str) -> str:
+        """The explanation in the first language the farmer reads, else empty."""
+        texts = self.explanations or {}
+        return next((texts[lang] for lang in language_chain(language) if texts.get(lang)), "")
 
     def actions_for(self, language: str) -> list[str]:
         """Reviewed steps in the farmer's language only; callers fall back to general steps they can read."""

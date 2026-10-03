@@ -79,10 +79,29 @@ class DetectionStatusSerializer(serializers.Serializer):
     retake_message = serializers.CharField(allow_null=True)
 
 
+VOICE_NOTE_TYPES = {"m4a", "aac", "mp3", "3gp", "ogg", "webm", "wav", "mp4"}
+VOICE_NOTE_MAX_BYTES = 2 * 1024 * 1024  # about a minute of speech
+
+
+class VoiceNoteSerializer(serializers.Serializer):
+    audio = serializers.FileField()
+
+    def validate_audio(self, audio):
+        extension = audio.name.rsplit(".", 1)[-1].lower() if "." in audio.name else ""
+        if extension not in VOICE_NOTE_TYPES:
+            raise serializers.ValidationError("Send the voice note as an audio file (m4a, aac, mp3, ogg).")
+        if audio.size > VOICE_NOTE_MAX_BYTES:
+            raise serializers.ValidationError("The voice note is too long. Keep it under one minute.")
+        return audio
+
+
 class CaseSerializer(serializers.ModelSerializer):
     photos = CasePhotoSerializer(many=True, read_only=True)
     missing_photos = serializers.SerializerMethodField()
     detection = serializers.SerializerMethodField()
+    disease = serializers.SerializerMethodField(
+        help_text="Confirmed disease in the farmer's language, else null"
+    )
 
     class Meta:
         model = Case
@@ -97,10 +116,19 @@ class CaseSerializer(serializers.ModelSerializer):
             "photos",
             "missing_photos",
             "detection",
+            "disease",
+            "voice_note",
             "created_at",
             "submitted_at",
         )
         read_only_fields = fields
+
+    def get_disease(self, case) -> str | None:
+        final = getattr(case, "final_diagnosis", None)
+        if final is None:
+            return None
+        profile = getattr(case.farmer, "farmer_profile", None)
+        return final.disease.display_name(profile.language if profile else "en")
 
     def get_missing_photos(self, case) -> list[str]:
         present = {photo.type for photo in case.photos.all()}

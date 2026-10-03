@@ -247,6 +247,7 @@ VALUES = {
     "product": "Ridomil Gold MZ 68 WG",
     "quantity": "1 pack of 250 g (125 g needed)",
     "expires": "17/10/2026",
+    "minutes": 10,
 }
 
 

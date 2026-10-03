@@ -9,6 +9,11 @@ def case_photo_upload_to(instance, filename):
     return f"cases/{instance.case_id}/{instance.id}_{filename}"
 
 
+def case_voice_note_upload_to(instance, filename):
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else "m4a"
+    return f"cases/{instance.id}/voice_note.{extension}"
+
+
 class Case(TimeStampedModel):
     """One crop problem reported by a farmer (Documentation §7).
 
@@ -61,6 +66,8 @@ class Case(TimeStampedModel):
     county = models.CharField(max_length=64, blank=True)
     ward = models.CharField(max_length=64, blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    # Optional spoken description from the farmer, for the reviewing agrovet.
+    voice_note = models.FileField(upload_to=case_voice_note_upload_to, null=True, blank=True)
 
     class Meta(TimeStampedModel.Meta):
         indexes = [

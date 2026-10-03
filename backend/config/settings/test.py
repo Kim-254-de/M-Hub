@@ -41,3 +41,6 @@ SMS = {
     "AT_API_KEY": "test-at-key",
     "CALLBACK_TOKEN": "test-sms-token",
 }
+
+# Registration tests post directly; the OTP tests turn this on.
+ACCOUNTS = {**ACCOUNTS, "REQUIRE_OTP": False}  # noqa: F405

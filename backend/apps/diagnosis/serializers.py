@@ -243,6 +243,11 @@ class ProvisionalResultSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
+class AIEvidenceSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    percent = serializers.IntegerField()
+
+
 class CaseDiagnosisSerializer(serializers.Serializer):
     """The farmer's view of where their diagnosis stands."""
 
@@ -263,3 +268,17 @@ class CaseDiagnosisSerializer(serializers.Serializer):
     )
     ai_corrected_message = serializers.CharField(allow_null=True)
     reviewer = AgrovetSummarySerializer(allow_null=True, help_text="Agrovet currently reviewing the case")
+    disease_name = serializers.CharField(
+        allow_null=True, help_text="Confirmed disease in the farmer's language"
+    )
+    similar_nearby = serializers.IntegerField(
+        allow_null=True, help_text="Other confirmed cases of this disease nearby in the last 30 days"
+    )
+
+
+class OutbreakSerializer(serializers.Serializer):
+    disease = DiseaseSerializer()
+    name = serializers.CharField(help_text="Disease name in the farmer's language")
+    count = serializers.IntegerField()
+    ward = serializers.CharField(allow_blank=True)
+    message = serializers.CharField(help_text="Alert text in the farmer's language")

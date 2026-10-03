@@ -14,7 +14,13 @@ from . import services
 from .messages import retake_message
 from .models import Case
 from .quality import PhotoQualityError
-from .serializers import CaseCreateSerializer, CasePhotoSerializer, CaseSerializer, SymptomAnswersSerializer
+from .serializers import (
+    CaseCreateSerializer,
+    CasePhotoSerializer,
+    CaseSerializer,
+    SymptomAnswersSerializer,
+    VoiceNoteSerializer,
+)
 
 
 class CaseViewSet(
@@ -29,7 +35,9 @@ class CaseViewSet(
         if getattr(self, "swagger_fake_view", False):  # schema generation
             return Case.objects.none()
         return (
-            Case.objects.filter(farmer=self.request.user).select_related("farmer").prefetch_related("photos")
+            Case.objects.filter(farmer=self.request.user)
+            .select_related("farmer__farmer_profile", "final_diagnosis__disease")
+            .prefetch_related("photos")
         )
 
     def get_serializer_class(self):
@@ -37,6 +45,7 @@ class CaseViewSet(
             "create": CaseCreateSerializer,
             "photos": CasePhotoSerializer,
             "answers": SymptomAnswersSerializer,
+            "voice_note": VoiceNoteSerializer,
         }.get(self.action, CaseSerializer)
 
     @extend_schema(request=CaseCreateSerializer, responses={201: CaseSerializer})
@@ -82,6 +91,24 @@ class CaseViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         case = self._call(services.save_answers, case, dict(serializer.validated_data))
+        return Response(CaseSerializer(case, context=self.get_serializer_context()).data)
+
+    @extend_schema(request={"multipart/form-data": VoiceNoteSerializer}, responses={200: CaseSerializer})
+    @action(
+        detail=True, methods=["post"], url_path="voice-note", parser_classes=[MultiPartParser, FormParser]
+    )
+    def voice_note(self, request, pk=None):
+        """Attach an optional spoken description for the agrovet. A new one replaces the old one."""
+        case = self.get_object()
+        if case.status not in (Case.Status.DRAFT, Case.Status.REPORTED):
+            raise ValidationError(
+                {"audio": "Voice notes can only be added before the agrovet reviews the case."}
+            )
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if case.voice_note:
+            case.voice_note.delete(save=False)
+        case.voice_note.save(serializer.validated_data["audio"].name, serializer.validated_data["audio"])
         return Response(CaseSerializer(case, context=self.get_serializer_context()).data)
 
     @extend_schema(request=None, responses={202: CaseSerializer})

@@ -84,6 +84,7 @@ class PrescriptionCardSerializer(serializers.ModelSerializer):
             "safety_notes",
             "phi_days",
             "instructions",
+            "dose_packs",
             "approved_by",
             "expires_at",
             "is_expired",

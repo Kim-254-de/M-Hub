@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "apps.followups",
     # Reviewed translations of farmer-facing text (Kikuyu first)
     "apps.translations",
+    # Kikuyu crop advice from an LLM, grounded on the case; never products or doses
+    "apps.advisory",
 ]
 
 MIDDLEWARE = [
@@ -143,6 +145,10 @@ REST_FRAMEWORK = {
         "ai_diagnosis_retry": env("API_THROTTLE_AI_RETRY", default="10/hour"),
         # Registration and login, per client IP. PINs are short, so keep this tight.
         "auth": env("API_THROTTLE_AUTH", default="10/min"),
+        # Sign-up codes by SMS, per client IP (each one costs an SMS).
+        "otp": env("API_THROTTLE_OTP", default="5/hour"),
+        # Questions to the crop adviser, per farmer (each one is an LLM call).
+        "advice": env("API_THROTTLE_ADVICE", default="30/day"),
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.exception_handler",
 }
@@ -384,4 +390,38 @@ LOGGING = {
         "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
         "apps": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
     },
+}
+
+# --- Advisory (LLM crop advice in the farmer's language) ---------------------
+
+ADVISORY = {
+    # "gemini" (Google, GEMINI_API_KEY) or "claude" (Anthropic, ANTHROPIC_API_KEY).
+    "PROVIDER": env("ADVISORY_PROVIDER", default="gemini"),
+    "MODEL": env("ADVISORY_MODEL", default="gemini-3.8-flash"),
+    # How much the model reasons before answering: low, medium or high.
+    "EFFORT": env("ADVISORY_EFFORT", default="medium"),
+    "MAX_TOKENS": env.int("ADVISORY_MAX_TOKENS", default=16000),
+    "TIMEOUT_S": env.float("ADVISORY_TIMEOUT_S", default=60.0),
+    "GEMINI_API_KEY": env("GEMINI_API_KEY", default=""),
+}
+
+# --- Accounts ---------------------------------------------------------------
+
+ACCOUNTS = {
+    # Sign-up needs a code sent by SMS to the phone number. Off only for local development without SMS.
+    "REQUIRE_OTP": env.bool("REQUIRE_OTP", default=True),
+    "OTP_TTL_MINUTES": env.int("OTP_TTL_MINUTES", default=10),
+    "OTP_MAX_ATTEMPTS": env.int("OTP_MAX_ATTEMPTS", default=5),
+    # Shown in the app's settings ("Use WhatsApp instead"). Empty hides the option.
+    "SUPPORT_WHATSAPP": env("SUPPORT_WHATSAPP", default=""),
+}
+
+# --- Outbreak alerts --------------------------------------------------------
+
+OUTBREAK = {
+    # "Late blight confirmed by N farmers near <ward> this week" when at least MIN_CASES confirmed
+    # cases of one disease are within RADIUS_KM in the last DAYS days.
+    "RADIUS_KM": env.float("OUTBREAK_RADIUS_KM", default=15.0),
+    "DAYS": env.int("OUTBREAK_DAYS", default=7),
+    "MIN_CASES": env.int("OUTBREAK_MIN_CASES", default=3),
 }

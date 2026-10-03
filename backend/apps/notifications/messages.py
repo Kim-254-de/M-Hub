@@ -59,6 +59,10 @@ FARMER_MESSAGES = {
         "sw": "AgriSense: Wauzaji wa pembejeo hawakukubaliana kuhusu tatizo. "
         "Tafadhali peleka sampuli ya mmea mgonjwa kwenye kliniki ya mimea au kwa afisa wa kilimo.",
     },
+    "signup_code": {
+        "en": "AgriSense: Your code is {code}. It expires in {minutes} minutes. Do not share it with anyone.",
+        "sw": "AgriSense: Nambari yako ni {code}. Itaisha baada ya dakika {minutes}. Usimpe mtu yeyote.",
+    },
     "prescription": {
         "en": "AgriSense prescription {code}: {product}, {quantity}. Valid until {expires}. "
         "Show this code at a verified agrovet.",
@@ -83,6 +87,7 @@ SAMPLE_VALUES = {
     "product": "Ridomil Gold MZ 68 WG",
     "quantity": "use the rate on the label",  # the longest dose wording
     "expires": "17/10/2026",
+    "minutes": 10,
 }
 
 _farmer = register(

@@ -132,6 +132,22 @@ def ai_opinion(case: Case) -> dict:
 PROVISIONAL_STATUSES = (Case.Status.REPORTED, Case.Status.DIAGNOSING)
 
 
+def ai_evidence(case: Case, language: str) -> dict | None:
+    """After confirmation: the AI's top suggestion, shown as supporting evidence next to the agrovet's
+    confirmation ("AI suggestion: Late blight (87%)"). None when there was no usable AI result."""
+    ai = _latest_completed_ai(case)
+    if ai is None or ai.needs_retake:
+        return None
+    top = next(iter(ai.suggestions.all()), None)
+    if top is None or top.is_healthy:
+        return None
+    disease = match_disease(top)
+    return {
+        "name": disease.display_name(language) if disease else top.name,
+        "percent": round(float(top.probability) * 100),
+    }
+
+
 def provisional_result(case: Case) -> dict | None:
     """The AI suggestion as the farmer sees it before an agrovet confirms.
 
