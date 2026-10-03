@@ -1,7 +1,10 @@
 """Farmer-facing retake prompts, keyed by reason code and language.
 
-Kept as plain text so the same strings serve the app and, later, WhatsApp.
+Kept as plain text so the same strings serve the app and, later, WhatsApp. English and Kiswahili are
+written here; other languages are reviewed translations (apps.translations).
 """
+
+from apps.translations.catalog import register
 
 RETAKE_MESSAGES = {
     "invalid_image": {
@@ -34,6 +37,8 @@ RETAKE_MESSAGES = {
 }
 
 
+_retake = register("cases.retake", RETAKE_MESSAGES)
+
+
 def retake_message(reason: str, language: str = "en") -> str:
-    messages = RETAKE_MESSAGES.get(reason, RETAKE_MESSAGES["invalid_image"])
-    return messages.get(language) or messages["en"]
+    return _retake.text(reason if reason in RETAKE_MESSAGES else "invalid_image", language)

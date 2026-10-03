@@ -173,7 +173,7 @@ def _record_failure(ai_diagnosis: AIDiagnosis, exc: ProviderError) -> RunOutcome
         )
         if not will_retry:
             # The AI only assists: when it cannot help, the case still goes to an agrovet.
-            _advance_case_to_diagnosing(ai_diagnosis.case_id)
+            _advance_case_to_diagnosing(ai_diagnosis.case_id, ai_diagnosis)
     return RunOutcome.RETRY if will_retry else RunOutcome.FAILED
 
 
@@ -214,8 +214,13 @@ def _record_success(ai_diagnosis: AIDiagnosis, result: IdentificationResult) -> 
             )
             for rank, s in enumerate(result.disease_suggestions[: config["TOP_N"]], start=1)
         )
-        if not ai_diagnosis.needs_retake:
-            _advance_case_to_diagnosing(ai_diagnosis.case_id)
+        if ai_diagnosis.needs_retake:
+            from apps.cases.services import retake_reason
+            from apps.notifications import events
+
+            events.retake_photos(ai_diagnosis.case, retake_reason(ai_diagnosis), ai_diagnosis)
+        else:
+            _advance_case_to_diagnosing(ai_diagnosis.case_id, ai_diagnosis)
 
     logger.info(
         "AI diagnosis %s completed: plant=%s tomato=%s top=%s",
@@ -236,8 +241,17 @@ def _is_tomato(result: IdentificationResult, min_probability) -> bool | None:
     )
 
 
-def _advance_case_to_diagnosing(case_id) -> None:
+def _advance_case_to_diagnosing(case_id, ai_diagnosis: AIDiagnosis | None = None) -> None:
+    from apps.notifications import events
+
+    from .review import assign_review_after_commit
+
     # Conditional update: never moves a case backwards if a human has already acted on it.
-    Case.objects.filter(pk=case_id, status=Case.Status.REPORTED).update(
+    moved = Case.objects.filter(pk=case_id, status=Case.Status.REPORTED).update(
         status=Case.Status.DIAGNOSING, updated_at=timezone.now()
     )
+    if moved:
+        # Process 3.4: hand the case to the farmer's chosen or the nearest verified agrovet.
+        assign_review_after_commit(case_id)
+        # Tell the farmer straight away: the provisional AI result, or that the case was received.
+        events.case_in_review(Case.objects.select_related("farmer").get(pk=case_id), ai_diagnosis)

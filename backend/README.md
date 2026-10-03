@@ -23,7 +23,7 @@ data-use consent. Auth endpoints are throttled per IP (`API_THROTTLE_AUTH`, defa
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/v1/auth/register/` | `phone, pin, name, language (en/sw), county, ward, consent` → `{access, refresh}` |
+| `POST /api/v1/auth/register/` | `phone, pin, name, language (en/sw/ki), county, ward, consent` → `{access, refresh}` |
 | `POST /api/v1/auth/token/` | `phone, pin` → `{access, refresh}` |
 | `POST /api/v1/auth/token/refresh/` | `refresh` → `{access}` |
 | `GET/POST /api/v1/farms/`, `GET/PATCH /api/v1/farms/{id}/` | Farmer's farms: GPS, `size_acres`, crops |
@@ -70,3 +70,194 @@ Behaviour:
 - Non-plant or non-tomato photos set `needs_retake` and keep the case `REPORTED`. Otherwise the case moves to
   `DIAGNOSING`, including when the AI fails, because the AI only assists the agrovet.
 - Provider chemical/biological treatment advice is stored but never returned by the API (registered products only).
+
+## Diagnose module — agrovet confirmation (processes 3.2–3.6)
+
+When the AI run finishes (or fails), the case becomes `DIAGNOSING` and goes to the farmer's chosen or the nearest
+verified agrovet. The agrovet sees three evidence sources and confirms or corrects the diagnosis.
+
+| Endpoint | Who | Process |
+|---|---|---|
+| `GET /api/v1/cases/{id}/agrovets/` | Farmer | Nearest verified agrovets for the case |
+| `POST /api/v1/cases/{id}/agrovets/` | Farmer | Choose the reviewing agrovet (`agrovet_id`); allowed until one has decided |
+| `GET /api/v1/cases/{id}/diagnosis/` | Farmer | Status, provisional AI result, safe first steps, confirmed disease, confidence |
+| `GET /api/v1/diseases/` | Any | Diseases and pests to choose from |
+| `GET /api/v1/agrovet/reviews/` | Agrovet | Open reviews (first confirmation or second opinion) |
+| `GET /api/v1/agrovet/reviews/{id}/` | Agrovet | Photos, answers, ward, AI result, similar cases, peer input |
+| `POST /api/v1/agrovet/reviews/{id}/decide/` | Agrovet | 3.4 `disease_id` (confirm/correct) or `unsure: true`, plus `notes` |
+| `GET /api/v1/peer/cases/` | Trusted farmer | 3.3 waiting cases in their ward (no farmer identities) |
+| `POST /api/v1/cases/{id}/peer-comments/` | Trusted farmer | 3.3 `disease_id` and/or `comment`, once per case |
+
+Behaviour:
+- **While the farmer waits:** `provisional` shows the AI suggestion as soon as the AI run completes ("Likely late
+  blight (92%)…", or `unsure` below `DIAGNOSE_AI_PROVISIONAL_MIN_PROBABILITY`, or `healthy`). It is hidden while photos
+  must be retaken, during a second opinion (the AI and the agrovet disagreed) and once confirmed. `safe_actions` are
+  product-free first steps: the disease's reviewed `safe_actions` in the farmer's language, else the general steps in
+  `apps/diagnosis/messages.py`. Products only ever come from an approved prescription. After confirmation,
+  `ai_corrected` tells the farmer when the agrovet's diagnosis differs from the AI suggestion.
+- **Similar cases (3.2):** confirmed cases in the same ward or within `DIAGNOSE_SIMILAR_RADIUS_KM`, from the last
+  `DIAGNOSE_SIMILAR_WINDOW_DAYS`, limited to the AI's suggested diseases. The majority counts only with at least
+  `DIAGNOSE_SIMILAR_MIN_CASES` cases.
+- **Peer input (3.3):** farmers in the case's ward with a verified purchase. Weight = 1 + trust score / 10.
+  Peer input informs the agrovet but is not part of the agreement check.
+- **Agreement check (3.5):** the agrovet's disease is compared with the AI top suggestion (if at least
+  `DIAGNOSE_AI_MIN_PROBABILITY` and in the disease catalogue; "healthy" counts as an opinion) and the similar-case
+  majority. All available sources agree → `DIAGNOSED` (`high` with two sources, `medium` with one, `low` with
+  none). Any disagreement, or `unsure` → `SECOND_OPINION`.
+- **Second opinion (3.6):** goes to another verified agrovet, who sees the first decision. If they agree with the first
+  agrovet, the AI or the similar-case majority → `DIAGNOSED` (`medium`); otherwise `UNKNOWN`, and the farmer is told to
+  visit a plant clinic. The first agrovet's trust score rises if confirmed and falls if contradicted.
+- Reviews unanswered after `DIAGNOSE_REVIEW_TIMEOUT_HOURS` go to the next nearest agrovet. Run `celery beat`
+  (every 10 minutes; it also assigns cases that arrived while no agrovet was verified).
+- AI-to-catalogue matching uses the disease name or scientific name, or `Disease.provider_ids` (Kindwise ids).
+
+## Prescribe module (processes 4.1–4.5)
+
+| Endpoint | Who | Process |
+|---|---|---|
+| `GET /api/v1/agrovet/cases/{id}/prescription-draft/` | Confirming agrovet | 4.1–4.3 allowed, ranked options with dose |
+| `POST /api/v1/agrovet/cases/{id}/prescription/` | Confirming agrovet | 4.4–4.5 approve `product_id` → code, expiry; case `PRESCRIBED` |
+| `GET /api/v1/cases/{id}/prescription/` | Farmer | Prescription card (encode `qr_payload` in the app's QR code) |
+
+Behaviour:
+- **Rule filter (4.1):** active products whose `approved_crops` include tomato and whose active ingredients match a
+  `TreatmentRule` for the confirmed disease. The agrovet can only pick from this list; Module 4 sells any of them.
+- **Ranking (4.2):** by improvement rate from `TreatmentOutcome`s of verified purchases nearby (same ward or within
+  `PRESCRIBE_OUTCOME_RADIUS_KM`), when a product has at least `PRESCRIBE_MIN_LOCAL_OUTCOMES`. Otherwise
+  "Not enough local data yet" and label guidance (shortest pre-harvest interval first). Outcomes come from the farmers'
+  day 7 follow-ups (see Apply and Follow-up).
+- **Dose (4.3):** farm `size_acres` × product `rate_per_acre`, rounded up to whole `pack_size` packs. Products without
+  a numeric rate say "Follow the label".
+- **Conflict of interest:** the ranking the agrovet saw is stored on the prescription. A daily task lowers the trust
+  score of agrovets who, in at least `PRESCRIBE_COI_MIN_PRESCRIPTIONS` prescriptions over `PRESCRIBE_COI_WINDOW_DAYS`,
+  chose a pricier option over a better-ranked one with local evidence at least `PRESCRIBE_COI_SHARE` of the time
+  (once per quarter).
+
+**Before the pilot:** enter diseases (with farmer-facing `local_names` and reviewed `safe_actions` per language),
+treatment rules and product rates in the admin (Products → Diseases; the treatment rules are inline). Treatment rules are agronomic and regulatory content; have them checked against the
+PCPB register and label claims. Nothing is seeded.
+
+## Apply and Follow-up (feedback loop)
+
+After a verified purchase the farmer records when they sprayed, then updates the crop's progress in the app on days
+2, 4 and 7. Nothing is sent to remind them; the app shows what is due.
+
+| Endpoint | Who | Purpose |
+|---|---|---|
+| `GET /api/v1/cases/{id}/follow-up/` | Farmer | Spray record, harvest-safe date, day 2/4/7 schedule with advice, expected results nearby |
+| `POST /api/v1/cases/{id}/follow-up/spray/` | Farmer | `sprayed_at` (default now), `amount_used` |
+| `POST /api/v1/cases/{id}/follow-up/check-ins/` | Farmer | `day`, `new_spots` (`spreading`/`fewer`/`stopped`), `share_affected` (`few`/`some`/`most`), optional `photo`, `notes` |
+
+Behaviour:
+- Only cases with a verified label check can start a follow-up (Documentation §11). The spray date cannot be in the
+  future or before the product was collected.
+- Each day can be reported once, from that day after spraying onwards; nothing is accepted after
+  `FOLLOWUP_CLOSE_AFTER_DAYS` (default 14). Each check-in returns advice in the farmer's language. If the spread has
+  not stopped, the farmer is told to go back to their agrovet rather than spray again.
+- The questions ask about **spread**, not healing: fungicides protect new growth and do not cure spotted leaves.
+  "Spread stopped" means no new spots and no more of the crop affected than at the report (same few/some/most scale
+  as Detect).
+- The day 7 check-in becomes the case's `TreatmentOutcome`: improved or not, and the first day the spread stopped.
+  Completing it earns `FOLLOWUP_REWARD_POINTS` (default 5), so farmers report failures too.
+- **Expected results:** before and after spraying, the farmer sees what happened for verified farmers nearby with the
+  same disease and product, e.g. "14 of 18 verified farmers nearby saw the spread stop, usually by day 4", once there
+  are `PRESCRIBE_MIN_LOCAL_OUTCOMES` reports. `response_rate` shows how many nearby farmers finished their follow-up
+  (low rates mean results look better than they are). The same outcomes rank products in Prescribe.
+
+## Farmer languages and Kikuyu translations
+
+Farmers choose English (`en`), Kiswahili (`sw`) or Gĩkũyũ (`ki`). English and Kiswahili are written in each app's
+`messages.py`. Kikuyu is **human-translated and reviewed** (Documentation §11); nothing is machine-translated.
+
+- Every farmer-facing message (retake prompts, diagnosis status, first steps, follow-up advice, SMS, prescription
+  card) is registered in a catalog (`apps/translations/catalog.py`) under a key such as `followups.advice.stopped`.
+- A Kikuyu `Translation` is shown only when a reviewer with the `translations.approve_translation` permission has
+  approved it in the admin, and only while the English it was translated from is unchanged. Editing the text, or
+  changing the English in code, takes it out of use until it is translated and reviewed again.
+- Until then the farmer sees the next language they read (`LANGUAGE_FALLBACKS`, Kikuyu → Kiswahili → English).
+  Screens and lists are resolved as a group, so one screen is never half Kikuyu and half Kiswahili.
+- Translations are checked before they can be approved: the same `{placeholders}` as the English, and for SMS plain
+  GSM-7 within the SMS length. Kikuyu SMS are sent without the tilde (ĩ → i, ũ → u) to stay in GSM-7.
+- **Dose and safety are templated.** The prescription card's `instructions` (how much to mix, days before harvest,
+  six spraying-safety lines) are built from numbers stored on the prescription (`dose_amount`, `dose_packs`, …) and
+  the product label, never from free text. The label's own `ppe_notes` are shown as printed (`label_notes`).
+- Disease names (`local_names`) and disease-specific `safe_actions` are entered per language on the disease in the
+  admin; enter `ki` only from reviewed text.
+
+Translator workflow:
+
+```bash
+python manage.py export_translations --language ki --output kikuyu.csv   # key, English, Kiswahili, status, ...
+# translator fills the "translation" column only (rows marked safety=yes need extra care)
+python manage.py import_translations kikuyu.csv --language ki --translator "Name"   # saved as drafts
+# reviewer approves the drafts in the admin: Translations -> select -> "Approve selected translations"
+```
+
+The export's `status` column shows `missing`, `draft`, `approved` or `english_changed` for each message.
+
+## SMS notifications (Africa's Talking)
+
+Farmers and agrovets are told by SMS at each step, so nobody has to keep the app open.
+
+| When | To | Message |
+|---|---|---|
+| AI run done, case sent to an agrovet | Farmer | Provisional result ("Likely late blight (98%), not yet confirmed…") and first steps; "received" if the AI failed |
+| AI says the photos are not a tomato plant | Farmer | Retake the photos |
+| Case assigned (first review or second opinion) | Agrovet | New case to review in <ward> within the review timeout |
+| Diagnosis confirmed | Farmer | Disease and agrovet; says so if it differs from the AI suggestion |
+| No agreement (`UNKNOWN`) | Farmer | Take a sample to a plant clinic |
+| Prescription approved | Farmer | Code, product, quantity, expiry: enough to buy without the app |
+
+Setup (sandbox):
+1. Sign in at https://account.africastalking.com, open the **Sandbox** app, and generate an API key (Settings → API Key).
+2. Set `AT_API_KEY` in `.env` (`AT_USERNAME=sandbox` and the sandbox `AT_BASE_URL` are the defaults). SMS turns on
+   when a key is set; `SMS_ENABLED=false` turns it off.
+3. Open the simulator (https://simulator.africastalking.com), enter a farmer's or agrovet's phone number, and the
+   messages appear there. The sandbox never reaches real phones.
+4. Optional delivery reports: set `SMS_CALLBACK_TOKEN` to a long random string and, under SMS → Callback URLs →
+   Delivery Reports, enter `https://<public host>/api/v1/notifications/sms/delivery/<token>/` (ngrok in development).
+
+For live: switch `AT_BASE_URL` to `https://api.africastalking.com`, `AT_USERNAME` to the live app's username, and use
+an approved sender ID (`AT_SENDER_ID`, approval takes days through the networks).
+
+Behaviour:
+- Messages are stored in an outbox (`SmsMessage`, visible in the admin) inside the same transaction as the event and
+  sent by a Celery task after commit. One message per event and recipient (DB constraint), so retries never
+  double-send.
+- Temporary errors (timeouts, 5xx, gateway errors, insufficient balance) retry with backoff up to `SMS_MAX_ATTEMPTS`;
+  invalid, blacklisted or DND numbers fail at once. Credential, sender ID and balance problems log at ERROR.
+- Texts are in the farmer's language (`apps/notifications/messages.py`), plain GSM-7 so one SMS holds 160
+  characters; tests check every template's length. No product is named before a prescription is approved.
+
+## Module 4 — Buy Genuine Product
+
+Needs a Daraja sandbox app (https://developer.safaricom.co.ke, test shortcode `174379`) and a free
+OCR.space key (https://ocr.space/ocrapi/freekey). Set the `MPESA_*` and `OCRSPACE_API_KEY` values in `.env`.
+Safaricom must reach `MPESA_CALLBACK_BASE_URL` over HTTPS; in development run `ngrok http 8000` and use its URL.
+Run `celery -A config beat -l info` alongside the worker for payment reconciliation and prescription expiry.
+
+| Endpoint | Who | Process |
+|---|---|---|
+| `GET /api/v1/prescriptions/{code}/stores/?latitude=&longitude=&radius_km=` | Farmer | 5.1 verified stores stocking a prescribed product, nearest first |
+| `POST /api/v1/orders/` | Farmer | 5.2 order (`payment_method`: `mpesa` or `pay_at_shop`) |
+| `POST /api/v1/orders/{id}/pay/` | Farmer | 5.2 STK push to the farmer's phone (202; result arrives by callback) |
+| `POST /api/v1/orders/{id}/cancel/` | Farmer | Cancel an unpaid order |
+| `GET /api/v1/orders/` | Farmer / agrovet | Own orders, or orders at the agrovet's store |
+| `POST /api/v1/agrovet/sales/match/` | Agrovet | 5.3 scan prescription code at pickup; checks product handed over |
+| `POST /api/v1/orders/{id}/label-check/` | Farmer | 5.4 label photo → PCPB number → register + prescription check |
+| `GET /api/v1/rewards/` | Farmer | 5.5 points balance and history |
+| `/api/v1/agrovet/store-items/` | Agrovet | Store catalogue (verified agrovets, registered products only) |
+| `POST /api/v1/payments/mpesa/callback/{token}/` | Safaricom | STK callback |
+
+Behaviour:
+- **Lifecycle:** `PRESCRIBED → PURCHASED` at pickup, then `VERIFIED` (points awarded once) or `FLAGGED`
+  (store excluded for that prescription; ordering elsewhere returns the case to `PRESCRIBED`). Unused
+  prescriptions expire; paid orders never do.
+- **Payments:** one open order per prescription and one open STK prompt per order (DB constraints). Callbacks
+  are idempotent and authenticated by a secret URL token; amounts are checked against the order. Payments with
+  no callback are resolved by STK query every 2 minutes, and time out after 15. Money that arrives for a cancelled
+  order or with the wrong amount is marked `review` for a human.
+- **Label check:** tolerant of OCR errors (B/8, O/0, missing brackets). Unreadable photos can be retaken; a
+  definitive result is final. Repeated failures at one store open a `StoreFlag` for admins.
+- A verified purchase also raises the farmer's trust score (weights their peer input in Diagnose).
+- `agrovets` is still a placeholder built on Documentation §9.2 for agrovet onboarding to take over.

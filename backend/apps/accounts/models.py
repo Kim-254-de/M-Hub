@@ -37,6 +37,7 @@ class FarmerProfile(TimeStampedModel):
     class Language(models.TextChoices):
         ENGLISH = "en", "English"
         SWAHILI = "sw", "Kiswahili"
+        KIKUYU = "ki", "Gĩkũyũ"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="farmer_profile")
     language = models.CharField(max_length=8, choices=Language.choices, default=Language.SWAHILI)
@@ -44,6 +45,8 @@ class FarmerProfile(TimeStampedModel):
     ward = models.CharField(max_length=64, blank=True, db_index=True)
     # Data-use consent (Kenya Data Protection Act, 2019). Registration fails without it.
     consent_at = models.DateTimeField()
+    # Updated through apps.rewards.services.adjust_trust; weights peer input in Diagnose.
+    trust_score = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 
     def __str__(self):
         return f"Farmer profile for {self.user}"

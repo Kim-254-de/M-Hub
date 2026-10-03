@@ -1,17 +1,35 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsFarmer
 from apps.cases.models import Case
+from apps.cases.services import farmer_language
+from apps.products.models import Disease
 
-from . import services
-from .models import AIDiagnosis
+from . import review, services
+from .messages import ai_corrected_message, provisional_message, safe_actions, status_message
+from .models import AgrovetReview, AIDiagnosis
 from .permissions import CanAccessCase
-from .serializers import AIDiagnosisSerializer
+from .serializers import (
+    AgrovetReviewListSerializer,
+    AgrovetReviewSerializer,
+    AgrovetSummarySerializer,
+    AIDiagnosisSerializer,
+    CaseDiagnosisSerializer,
+    ChooseAgrovetSerializer,
+    DecisionSerializer,
+    DiseaseSerializer,
+    PeerCaseSerializer,
+    PeerCommentSerializer,
+)
 
 
 class Conflict(ValidationError):
@@ -65,3 +83,191 @@ class CaseAIDiagnosisView(APIView):
         except services.AIDiagnosisInProgressError as exc:
             raise Conflict(str(exc)) from exc
         return Response(AIDiagnosisSerializer(ai_diagnosis).data, status=status.HTTP_202_ACCEPTED)
+
+
+# --- Processes 3.2-3.6 ------------------------------------------------------------
+
+
+class DiagnoseAPIError(APIException):
+    def __init__(self, error: review.DiagnoseError):
+        self.status_code = error.status
+        super().__init__(detail={"detail": str(error), "code": error.code})
+
+
+def run(fn, *args, **kwargs):
+    """Call a review service and translate rule violations into API errors."""
+    try:
+        return fn(*args, **kwargs)
+    except review.DiagnoseError as exc:
+        raise DiagnoseAPIError(exc) from exc
+
+
+class DiseaseListView(ListAPIView):
+    """Diseases and pests an agrovet or peer farmer can choose from."""
+
+    serializer_class = DiseaseSerializer
+    pagination_class = None
+    queryset = Disease.objects.filter(is_active=True)
+
+
+class CaseDiagnosisView(APIView):
+    """Farmer: where the diagnosis of a case stands, in their language."""
+
+    permission_classes = [IsAuthenticated, CanAccessCase]
+
+    @extend_schema(responses=CaseDiagnosisSerializer)
+    def get(self, request, case_id):
+        case = get_object_or_404(
+            Case.objects.select_related("final_diagnosis__disease", "final_diagnosis__confirmed_by"),
+            pk=case_id,
+        )
+        self.check_object_permissions(request, case)
+        final = getattr(case, "final_diagnosis", None)
+        pending = (
+            case.agrovet_reviews.filter(status=AgrovetReview.Status.PENDING).select_related("agrovet").first()
+        )
+        language = farmer_language(case.farmer)
+        likely_disease = None
+        provisional = review.provisional_result(case)
+        if provisional is not None:
+            disease = likely_disease = provisional["disease"]
+            name = disease.display_name(language) if disease else provisional["name"]
+            provisional = {
+                **provisional,
+                "name": name,
+                "disease": DiseaseSerializer(disease).data if disease else None,
+                "message": provisional_message(
+                    provisional["kind"],
+                    language,
+                    disease=name,
+                    percent=round((provisional["probability"] or 0) * 100),
+                ),
+            }
+
+        # Disease-specific first steps once known (confirmed, or the AI's likely disease), else general ones.
+        known = final.disease if final else likely_disease
+        first_steps = safe_actions(known, language)
+
+        corrected = review.ai_corrected(case, final) if final else None
+        # After diagnosis (prescribed, purchased, ...) the farmer still sees what was confirmed.
+        message_status = Case.Status.DIAGNOSED if final else case.status
+        data = {
+            "case_id": case.id,
+            "status": case.status,
+            "message": status_message(
+                message_status, language, disease=final.disease.display_name(language) if final else ""
+            ),
+            "provisional": provisional,
+            "safe_actions": first_steps,
+            "disease": DiseaseSerializer(final.disease).data if final else None,
+            "confidence": final.confidence if final else None,
+            "confirmed_by": final.confirmed_by.name if final else None,
+            "ai_corrected": corrected,
+            "ai_corrected_message": ai_corrected_message(language) if corrected else None,
+            "reviewer": AgrovetSummarySerializer(pending.agrovet, context={"case": case}).data
+            if pending
+            else None,
+        }
+        return Response(data)
+
+
+class CaseAgrovetChoiceView(APIView):
+    """Farmer: list nearby verified agrovets, and choose who confirms the diagnosis."""
+
+    permission_classes = [IsAuthenticated, IsFarmer]
+
+    def get_case(self, case_id) -> Case:
+        return get_object_or_404(Case, pk=case_id, farmer=self.request.user)
+
+    @extend_schema(responses=AgrovetSummarySerializer(many=True))
+    def get(self, request, case_id):
+        case = self.get_case(case_id)
+        agrovets = review.nearest_verified_agrovets(case)[:10]
+        return Response(AgrovetSummarySerializer(agrovets, many=True, context={"case": case}).data)
+
+    @extend_schema(request=ChooseAgrovetSerializer, responses={201: AgrovetSummarySerializer})
+    def post(self, request, case_id):
+        case = self.get_case(case_id)
+        data = ChooseAgrovetSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        chosen = run(
+            review.choose_agrovet,
+            farmer=request.user,
+            case=case,
+            agrovet_id=data.validated_data["agrovet_id"],
+        )
+        return Response(
+            AgrovetSummarySerializer(chosen.agrovet, context={"case": case}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AgrovetReviewViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Verified agrovet: cases to confirm (3.4) or give a second opinion on (3.6)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        return {"list": AgrovetReviewListSerializer, "decide": DecisionSerializer}.get(
+            self.action, AgrovetReviewSerializer
+        )
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return AgrovetReview.objects.none()
+        agrovet = run(review.get_verified_agrovet, self.request.user)
+        if self.action == "list":
+            return review.open_reviews_for(agrovet)
+        return (
+            AgrovetReview.objects.filter(agrovet=agrovet)
+            .exclude(status=AgrovetReview.Status.WITHDRAWN)
+            .select_related("case", "disease")
+            .prefetch_related("case__photos")
+        )
+
+    @extend_schema(request=DecisionSerializer, responses=AgrovetReviewSerializer)
+    @action(detail=True, methods=["post"])
+    def decide(self, request, pk=None):
+        """Confirm or correct the diagnosis (``disease_id``), or say you cannot tell (``unsure``)."""
+        current = self.get_object()
+        data = DecisionSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        decided = run(
+            review.decide,
+            agrovet_user=request.user,
+            review=current,
+            disease_id=data.validated_data.get("disease_id"),
+            unsure=data.validated_data["unsure"],
+            notes=data.validated_data["notes"],
+        )
+        return Response(AgrovetReviewSerializer(decided).data)
+
+
+class PeerCaseListView(ListAPIView):
+    """Trusted farmer: cases waiting for diagnosis in their ward (3.3). No farmer identities."""
+
+    serializer_class = PeerCaseSerializer
+    permission_classes = [IsAuthenticated, IsFarmer]
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Case.objects.none()
+        return review.cases_open_for_peer(self.request.user)
+
+
+class PeerCommentView(APIView):
+    permission_classes = [IsAuthenticated, IsFarmer]
+
+    @extend_schema(request=PeerCommentSerializer, responses={201: PeerCommentSerializer})
+    def post(self, request, case_id):
+        case = get_object_or_404(Case, pk=case_id)
+        data = PeerCommentSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        comment = run(
+            review.add_peer_comment,
+            user=request.user,
+            case=case,
+            disease_id=data.validated_data.get("disease_id"),
+            comment=data.validated_data.get("comment", ""),
+        )
+        return Response(PeerCommentSerializer(comment).data, status=status.HTTP_201_CREATED)

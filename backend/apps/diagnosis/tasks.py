@@ -18,3 +18,11 @@ def run_ai_diagnosis_task(self, ai_diagnosis_id: str) -> None:
             AIDiagnosis.objects.filter(pk=ai_diagnosis_id).values_list("attempts", flat=True).first() or 1
         )
         raise self.retry(countdown=retry_delay_seconds(attempts))
+
+
+@shared_task(ignore_result=True)
+def assign_reviews_task() -> None:
+    """Every 10 minutes (Celery beat): reassign unanswered reviews and assign waiting cases."""
+    from .review import assign_pending_reviews
+
+    assign_pending_reviews()

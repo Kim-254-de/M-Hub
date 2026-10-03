@@ -2,10 +2,17 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.rewards.views import MyRewardsView
+
 api_v1 = [
     path("", include("apps.accounts.urls")),
     path("", include("apps.cases.urls")),
     path("", include("apps.diagnosis.urls")),
+    path("", include("apps.prescriptions.urls")),
+    path("", include("apps.purchases.urls")),
+    path("", include("apps.notifications.urls")),
+    path("", include("apps.followups.urls")),
+    path("rewards/", MyRewardsView.as_view(), name="my-rewards"),
 ]
 
 urlpatterns = [
