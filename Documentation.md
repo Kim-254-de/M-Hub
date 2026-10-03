@@ -100,7 +100,7 @@ Smallholder tomato farmers in Kenya lose large parts of their harvest to pests a
 
 | Channel | Users | Notes |
 |---|---|---|
-| **Mobile app** (Flutter) | Farmers, agrovets | Full features: case history, store, maps, agrovet dashboard |
+| **Mobile app** (React) | Farmers, agrovets | Full features: case history, store, maps, agrovet dashboard |
 | **WhatsApp** (Cloud API) | Farmers | Accessibility channel: no download needed; supports photos, voice notes, location and buttons |
 | **USSD/SMS** *(future)* | Feature-phone farmers | Basic functions such as checking a product's registration number |
 
