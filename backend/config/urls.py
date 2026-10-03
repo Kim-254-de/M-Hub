@@ -14,6 +14,7 @@ api_v1 = [
     path("", include("apps.purchases.urls")),
     path("", include("apps.notifications.urls")),
     path("", include("apps.followups.urls")),
+    path("", include("apps.advisory.urls")),
     path("rewards/", MyRewardsView.as_view(), name="my-rewards"),
 ]
 
@@ -26,5 +27,6 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    # Uploaded photos in development (the simulator shows the farmer's own photos).
+    # Local development only: uploaded photos and voice notes (the simulator shows the farmer's photos).
+    # Production serves media from storage.
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

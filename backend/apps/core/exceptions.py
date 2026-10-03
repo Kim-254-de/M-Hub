@@ -1,5 +1,6 @@
 import logging
 
+from rest_framework.exceptions import APIException
 from rest_framework.views import exception_handler as drf_exception_handler
 
 logger = logging.getLogger(__name__)
@@ -17,3 +18,11 @@ def exception_handler(exc, context):
         view = context.get("view")
         logger.exception("Unhandled API error in %s", type(view).__name__ if view else "unknown view")
     return response
+
+
+class CodedAPIException(APIException):
+    """An API error with a stable ``code`` the app can switch on: ``{"detail": ..., "code": ...}``."""
+
+    def __init__(self, message: str, *, code: str, status_code: int = 400):
+        self.status_code = status_code
+        super().__init__(detail={"detail": message, "code": code})

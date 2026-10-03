@@ -49,6 +49,8 @@ class FarmerProfile(TimeStampedModel):
     consent_at = models.DateTimeField()
     # Updated through apps.rewards.services.adjust_trust; weights peer input in Diagnose.
     trust_score = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    # SMS updates about the farmer's cases (the app's notifications switch). Sign-up codes always go.
+    notifications_enabled = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Farmer profile for {self.user}"

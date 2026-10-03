@@ -13,6 +13,7 @@ class SmsMessage(TimeStampedModel):
         DIAGNOSIS_CONFIRMED = "diagnosis_confirmed"
         DIAGNOSIS_UNKNOWN = "diagnosis_unknown"
         PRESCRIPTION_ISSUED = "prescription_issued"
+        SIGNUP_CODE = "signup_code"
 
     class Status(models.TextChoices):
         QUEUED = "queued"

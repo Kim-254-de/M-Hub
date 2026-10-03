@@ -50,3 +50,6 @@ WHATSAPP = {
     "APP_SECRET": "test-wa-secret",
     "VERIFY_TOKEN": "test-wa-verify",
 }
+
+# Registration tests post directly; the OTP tests turn this on.
+ACCOUNTS = {**ACCOUNTS, "REQUIRE_OTP": False}  # noqa: F405

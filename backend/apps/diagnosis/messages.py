@@ -82,7 +82,19 @@ GENERAL_SAFE_ACTIONS = {
 }
 
 
+OUTBREAK_MESSAGES = {
+    "near_ward": {
+        "en": "{disease} confirmed by {count} farmers near {ward} this week. Check your crop.",
+        "sw": "{disease} imethibitishwa na wakulima {count} karibu na {ward} wiki hii. Kagua zao lako.",
+    },
+    "nearby": {
+        "en": "{disease} confirmed by {count} farmers near you this week. Check your crop.",
+        "sw": "{disease} imethibitishwa na wakulima {count} karibu nawe wiki hii. Kagua zao lako.",
+    },
+}
+
 _status = register("diagnosis.status", STATUS_MESSAGES)
+_outbreak = register("diagnosis.outbreak", OUTBREAK_MESSAGES)
 _provisional = register("diagnosis.provisional", PROVISIONAL_MESSAGES)
 _corrected = register("diagnosis", {"ai_corrected": AI_CORRECTED_MESSAGES})
 _SAFE_ACTION_NAMES = [str(i) for i in range(len(GENERAL_SAFE_ACTIONS["en"]))]
@@ -125,3 +137,9 @@ def status_message(status: str, language: str = "en", **values) -> str | None:
     if status not in STATUS_MESSAGES:
         return None
     return _status.text(status, language, **values)
+
+
+def outbreak_message(language: str, *, disease: str, count: int, ward: str) -> str:
+    if ward:
+        return _outbreak.text("near_ward", language, disease=disease, count=count, ward=ward)
+    return _outbreak.text("nearby", language, disease=disease, count=count)

@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError
@@ -14,8 +14,14 @@ from apps.cases.models import Case
 from apps.cases.services import farmer_language
 from apps.products.models import Disease
 
-from . import review, services
-from .messages import ai_corrected_message, provisional_message, safe_actions, status_message
+from . import outbreaks, review, services
+from .messages import (
+    ai_corrected_message,
+    outbreak_message,
+    provisional_message,
+    safe_actions,
+    status_message,
+)
 from .models import AgrovetReview, AIDiagnosis
 from .permissions import CanAccessCase
 from .serializers import (
@@ -27,6 +33,7 @@ from .serializers import (
     ChooseAgrovetSerializer,
     DecisionSerializer,
     DiseaseSerializer,
+    OutbreakSerializer,
     PeerCaseSerializer,
     PeerCommentSerializer,
 )
@@ -167,6 +174,10 @@ class CaseDiagnosisView(APIView):
             "reviewer": AgrovetSummarySerializer(pending.agrovet, context={"case": case}).data
             if pending
             else None,
+            "disease_name": final.disease.display_name(language) if final else None,
+            "explanation": final.disease.explanation(language) if final else "",
+            "ai_evidence": review.ai_evidence(case, language) if final else None,
+            "similar_nearby": outbreaks.similar_nearby(final) if final else None,
         }
         return Response(data)
 
@@ -271,3 +282,44 @@ class PeerCommentView(APIView):
             comment=data.validated_data.get("comment", ""),
         )
         return Response(PeerCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+
+class OutbreakAlertView(APIView):
+    """Farmer: diseases confirmed by several farmers near their farm this week (Check Crop alert)."""
+
+    permission_classes = [IsAuthenticated, IsFarmer]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("latitude", float, required=False),
+            OpenApiParameter("longitude", float, required=False),
+        ],
+        responses=OutbreakSerializer(many=True),
+    )
+    def get(self, request):
+        latitude, longitude = request.query_params.get("latitude"), request.query_params.get("longitude")
+        if latitude is None or longitude is None:
+            farm = request.user.farms.order_by("-created_at").first()
+            if farm is None:
+                return Response([])
+            latitude, longitude = farm.latitude, farm.longitude
+        try:
+            found = outbreaks.nearby_outbreaks(float(latitude), float(longitude))
+        except ValueError as exc:
+            raise ValidationError({"latitude": "Send latitude and longitude as numbers."}) from exc
+        language = farmer_language(request.user)
+        data = []
+        for outbreak in found:
+            name = outbreak.disease.display_name(language)
+            data.append(
+                {
+                    "disease": DiseaseSerializer(outbreak.disease).data,
+                    "name": name,
+                    "count": outbreak.count,
+                    "ward": outbreak.ward,
+                    "message": outbreak_message(
+                        language, disease=name, count=outbreak.count, ward=outbreak.ward
+                    ),
+                }
+            )
+        return Response(OutbreakSerializer(data, many=True).data)

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from django.conf import settings
 
+from apps.accounts.models import FarmerProfile
 from apps.prescriptions.messages import sms_quantity
 
 from .messages import REVIEW_ASSIGNED, ROUND_NAMES, farmer_message, to_gsm
@@ -28,6 +29,8 @@ def _to_farmer(case, key: str, purpose: str, source_ref: str, **values):
     # Farmers chatting on WhatsApp get the message there (with buttons); everyone else by SMS.
     if farmer_event(case, key, body, source_ref, values):
         return None
+    if FarmerProfile.objects.filter(user=farmer, notifications_enabled=False).exists():
+        return None  # the farmer turned SMS off in the app's settings
     return queue_sms(to=farmer.phone, body=body, purpose=purpose, source_ref=source_ref)
 
 

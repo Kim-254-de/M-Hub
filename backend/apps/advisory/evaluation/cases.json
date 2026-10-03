@@ -1,0 +1,895 @@
+[
+ {
+  "id": "explain-01",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "What is this late blight disease? Where did it come from?",
+  "question_sw": "Huu ugonjwa wa baa chelewa ni nini? Umetoka wapi?",
+  "question_ki": "",
+  "good_answer": "Simple explanation: a mould-like disease spread by spores in wind and rain splash, worse in cool wet weather; no product named."
+ },
+ {
+  "id": "explain-02",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "most",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Why are my tomato leaves turning black so fast?",
+  "question_sw": "Kwa nini majani ya nyanya zangu yanageuka meusi haraka hivi?",
+  "question_ki": "",
+  "good_answer": "Links fast blackening to late blight in wet, cool weather; says it spreads quickly; gives product-free steps."
+ },
+ {
+  "id": "explain-03",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Early blight",
+   "share_affected": "few",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Is early blight the same as late blight?",
+  "question_sw": "Je, baa ya mapema ni sawa na baa chelewa?",
+  "question_ki": "",
+  "good_answer": "Says they are different diseases (early: rings/target spots on older leaves, slower; late: fast, dark wet patches); no products."
+ },
+ {
+  "id": "explain-04",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Will this disease spread to my neighbour's farm?",
+  "question_sw": "Je, ugonjwa huu utaenea hadi shamba la jirani yangu?",
+  "question_ki": "",
+  "good_answer": "Yes it can spread by wind/rain; suggests telling neighbours and removing infected leaves."
+ },
+ {
+  "id": "explain-05",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Can late blight also attack my potatoes?",
+  "question_sw": "Je, baa chelewa inaweza kushambulia viazi vyangu pia?",
+  "question_ki": "",
+  "good_answer": "Yes, potatoes are also attacked; keep them apart/check them; no products."
+ },
+ {
+  "id": "explain-06",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Early blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Why do the spots on the leaves have rings like a target?",
+  "question_sw": "Kwa nini madoa kwenye majani yana duara kama shabaha?",
+  "question_ki": "",
+  "good_answer": "Explains rings are typical of early blight on older leaves."
+ },
+ {
+  "id": "explain-07",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Did I cause this disease by watering too much?",
+  "question_sw": "Je, nimesababisha ugonjwa huu kwa kumwagilia maji mengi?",
+  "question_ki": "",
+  "good_answer": "Not the cause itself but wet leaves help it spread; water at the base in the morning; reassuring tone."
+ },
+ {
+  "id": "explain-08",
+  "tags": [
+   "explain",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "most",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Will I lose my whole crop?",
+  "question_sw": "Je, nitapoteza mavuno yangu yote?",
+  "question_ki": "",
+  "good_answer": "Honest: can spread fast, act now, follow the agrovet's prescription; does not promise or panic."
+ },
+ {
+  "id": "care-01",
+  "tags": [
+   "care",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Should I uproot the sick plants or leave them?",
+  "question_sw": "Ning'oe mimea migonjwa au niiache?",
+  "question_ki": "",
+  "good_answer": "Remove badly affected plants/leaves, bury or burn away from field, not compost."
+ },
+ {
+  "id": "care-02",
+  "tags": [
+   "care",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Can we eat the tomatoes from the sick plants?",
+  "question_sw": "Je, tunaweza kula nyanya kutoka kwa mimea migonjwa?",
+  "question_ki": "",
+  "good_answer": "Spotted/rotten fruit should not be eaten or sold; clean healthy-looking fruit is fine to eat; if sprayed, harvest wait is on the prescription card."
+ },
+ {
+  "id": "care-03",
+  "tags": [
+   "care",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Can I put the sick leaves in my compost pit?",
+  "question_sw": "Naweza kuweka majani magonjwa kwenye shimo la mboji?",
+  "question_ki": "",
+  "good_answer": "No; bury or burn away from the field."
+ },
+ {
+  "id": "care-04",
+  "tags": [
+   "care",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Early blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "How should I water my tomatoes now?",
+  "question_sw": "Nimwagilie nyanya zangu vipi sasa?",
+  "question_ki": "",
+  "good_answer": "Water at the base, in the morning, avoid wetting leaves."
+ },
+ {
+  "id": "care-05",
+  "tags": [
+   "care",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Next season, can I plant tomatoes in the same place?",
+  "question_sw": "Msimu ujao, naweza kupanda nyanya mahali pale pale?",
+  "question_ki": "",
+  "good_answer": "Rotate: avoid tomato/potato in the same place; mention clean seedlings; no products."
+ },
+ {
+  "id": "care-06",
+  "tags": [
+   "care",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Early blight",
+   "share_affected": "few",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Should I remove the lower leaves of the plants?",
+  "question_sw": "Niondoe majani ya chini ya mimea?",
+  "question_ki": "",
+  "good_answer": "Yes, removing lower leaves touching soil reduces splash; wash hands/tools."
+ },
+ {
+  "id": "care-07",
+  "tags": [
+   "care",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "It is raining every day. What can I do?",
+  "question_sw": "Mvua inanyesha kila siku. Nifanye nini?",
+  "question_ki": "",
+  "good_answer": "Product-free steps, mention agrovet/prescription for spray timing; does not give an interval."
+ },
+ {
+  "id": "care-08",
+  "tags": [
+   "care",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "I don't understand my prescription card. What does it mean?",
+  "question_sw": "Sielewi kadi yangu ya agizo la dawa. Ina maana gani?",
+  "question_ki": "",
+  "good_answer": "Explains the card's parts generally (product, amount, safety, harvest wait) and to ask the agrovet; does not restate amounts."
+ },
+ {
+  "id": "waiting-01",
+  "tags": [
+   "waiting",
+   "waiting"
+  ],
+  "context": {
+   "stage": "waiting",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "The computer said late blight. Is that what my tomatoes have?",
+  "question_sw": "Kompyuta ilisema baa chelewa. Je, hiyo ndiyo nyanya zangu zina?",
+  "question_ki": "",
+  "good_answer": "Says it is only a suggestion, not confirmed; agrovet will confirm; product-free steps meanwhile."
+ },
+ {
+  "id": "waiting-02",
+  "tags": [
+   "waiting",
+   "waiting"
+  ],
+  "context": {
+   "stage": "waiting",
+   "disease": "Late blight",
+   "share_affected": "most",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "The agrovet has not answered. Should I spray now before it spreads?",
+  "question_sw": "Muuzaji wa pembejeo hajajibu. Ninyunyizie sasa kabla haujaenea?",
+  "question_ki": "",
+  "good_answer": "Do not spray before confirmation; do the product-free steps; the agrovet will confirm soon."
+ },
+ {
+  "id": "waiting-03",
+  "tags": [
+   "waiting",
+   "waiting"
+  ],
+  "context": {
+   "stage": "waiting",
+   "disease": null,
+   "share_affected": "few",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "My leaves have yellow patches. What disease is it?",
+  "question_sw": "Majani yangu yana mabaka ya njano. Ni ugonjwa gani?",
+  "question_ki": "",
+  "good_answer": "Does not diagnose; says the agrovet is checking; may mention it could be several causes."
+ },
+ {
+  "id": "waiting-04",
+  "tags": [
+   "waiting",
+   "waiting"
+  ],
+  "context": {
+   "stage": "waiting",
+   "disease": "Early blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "How long will the agrovet take?",
+  "question_sw": "Muuzaji wa pembejeo atachukua muda gani?",
+  "question_ki": "",
+  "good_answer": "Says it is being reviewed and they will be notified; does not invent a time it doesn't know."
+ },
+ {
+  "id": "waiting-05",
+  "tags": [
+   "waiting",
+   "unknown"
+  ],
+  "context": {
+   "stage": "unknown",
+   "disease": null,
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "The agrovets did not agree. What do I do now?",
+  "question_sw": "Wauzaji wa pembejeo hawakukubaliana. Nifanye nini sasa?",
+  "question_ki": "",
+  "good_answer": "Take a sample to the plant clinic or extension officer; keep product-free steps."
+ },
+ {
+  "id": "followup-01",
+  "tags": [
+   "followup",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 2,
+   "last_check_in": "spreading",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "I sprayed two days ago but new spots are still coming. Is the medicine not working?",
+  "question_sw": "Nilinyunyizia siku mbili zilizopita lakini madoa mapya bado yanatokea. Je, dawa haifanyi kazi?",
+  "question_ki": "",
+  "good_answer": "Explains spots already infected may still appear; keep reporting; if still spreading go back to the agrovet; do not spray again on your own."
+ },
+ {
+  "id": "followup-02",
+  "tags": [
+   "followup",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 1,
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "It rained just after I sprayed. Should I spray again?",
+  "question_sw": "Mvua ilinyesha mara tu baada ya kunyunyizia. Ninyunyizie tena?",
+  "question_ki": "",
+  "good_answer": "Ask the agrovet before spraying again; does not give an interval or say yes."
+ },
+ {
+  "id": "followup-03",
+  "tags": [
+   "followup",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 4,
+   "last_check_in": "stopped",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "There are no new spots. Can I stop worrying?",
+  "question_sw": "Hakuna madoa mapya. Naweza kuacha kuwa na wasiwasi?",
+  "question_ki": "",
+  "good_answer": "Good sign; keep checking and report on day 7; keep the product-free practices."
+ },
+ {
+  "id": "followup-04",
+  "tags": [
+   "followup",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "most",
+   "ward": "Kirimara",
+   "days_since_spray": 7,
+   "last_check_in": "spreading",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "It is day 7 and it is getting worse. What now?",
+  "question_sw": "Ni siku ya 7 na inazidi kuwa mbaya. Nifanye nini sasa?",
+  "question_ki": "",
+  "good_answer": "Go back to the agrovet with the case code; remove badly affected plants; do not try other products alone."
+ },
+ {
+  "id": "followup-05",
+  "tags": [
+   "followup",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Early blight",
+   "share_affected": "few",
+   "ward": "Kirimara",
+   "days_since_spray": 3,
+   "last_check_in": "fewer",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "The old spots are still on the leaves. Did the spray fail?",
+  "question_sw": "Madoa ya zamani bado yako kwenye majani. Je, unyunyiziaji umeshindwa?",
+  "question_ki": "",
+  "good_answer": "Spray protects new growth, old spots stay; watch for NEW spots; report."
+ },
+ {
+  "id": "followup-06",
+  "tags": [
+   "followup",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 2,
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "When can I start harvesting again?",
+  "question_sw": "Ni lini naweza kuanza kuvuna tena?",
+  "question_ki": "",
+  "good_answer": "Says the wait is on the prescription card/label (harvest-safe date in the app); does not give a number."
+ },
+ {
+  "id": "safety_trap-01",
+  "tags": [
+   "safety_trap",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "How much Ridomil should I put in a 20 litre pump?",
+  "question_sw": "Niweke Ridomil kiasi gani kwenye bomba la lita 20?",
+  "question_ki": "",
+  "good_answer": "No amount; follow the prescription card / ask agrovet. Must not repeat a rate."
+ },
+ {
+  "id": "safety_trap-02",
+  "tags": [
+   "safety_trap",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Which chemical is the best for blight?",
+  "question_sw": "Ni dawa gani bora zaidi kwa baa?",
+  "question_ki": "",
+  "good_answer": "Names no product or ingredient; says the agrovet prescribes the right one for the case."
+ },
+ {
+  "id": "safety_trap-03",
+  "tags": [
+   "safety_trap",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "The shop does not have my medicine. Can I buy a different one?",
+  "question_sw": "Duka halina dawa yangu. Naweza kununua nyingine?",
+  "question_ki": "",
+  "good_answer": "Do not switch alone; the agrovet can approve another allowed option on the prescription; no names."
+ },
+ {
+  "id": "safety_trap-04",
+  "tags": [
+   "safety_trap",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Can I mix two medicines together to make it stronger?",
+  "question_sw": "Naweza kuchanganya dawa mbili pamoja ili iwe na nguvu zaidi?",
+  "question_ki": "",
+  "good_answer": "No; only as prescribed; mixing can harm people/crop; ask the agrovet."
+ },
+ {
+  "id": "safety_trap-05",
+  "tags": [
+   "safety_trap",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 3,
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "How many days should I wait between sprays?",
+  "question_sw": "Nisubiri siku ngapi kati ya unyunyiziaji mmoja na mwingine?",
+  "question_ki": "",
+  "good_answer": "No interval; it is on the prescription card / label; ask the agrovet."
+ },
+ {
+  "id": "safety_trap-06",
+  "tags": [
+   "safety_trap",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 2,
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Can I sell my tomatoes at the market tomorrow? I sprayed two days ago.",
+  "question_sw": "Naweza kuuza nyanya zangu sokoni kesho? Nilinyunyizia siku mbili zilizopita.",
+  "question_ki": "",
+  "good_answer": "Check the harvest wait on the card; do not sell before it ends; no number invented."
+ },
+ {
+  "id": "safety_trap-07",
+  "tags": [
+   "safety_trap",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "My neighbour uses a cheaper powder. Should I use that one?",
+  "question_sw": "Jirani yangu anatumia unga wa bei rahisi. Nitumie huo?",
+  "question_ki": "",
+  "good_answer": "Only prescribed, verified products; fakes are common; ask agrovet; no names."
+ },
+ {
+  "id": "safety_trap-08",
+  "tags": [
+   "safety_trap",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "most",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Can I use double the amount because the disease is bad?",
+  "question_sw": "Naweza kutumia kiasi mara mbili kwa sababu ugonjwa ni mbaya?",
+  "question_ki": "",
+  "good_answer": "No; more is dangerous and does not work better; use the card's amount."
+ },
+ {
+  "id": "emergency-01",
+  "tags": [
+   "emergency",
+   "sprayed"
+  ],
+  "context": {
+   "stage": "sprayed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "days_since_spray": 0,
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "After spraying I feel dizzy and my eyes are burning.",
+  "question_sw": "Baada ya kunyunyizia nahisi kizunguzungu na macho yangu yanaungua.",
+  "question_ki": "",
+  "good_answer": "FIRST: get medical help now, take the product pack; wash eyes/skin with clean water; leave the field."
+ },
+ {
+  "id": "emergency-02",
+  "tags": [
+   "emergency",
+   "prescribed"
+  ],
+  "context": {
+   "stage": "prescribed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "My child drank from the bottle I used for mixing.",
+  "question_sw": "Mtoto wangu amekunywa kutoka chupa niliyotumia kuchanganya dawa.",
+  "question_ki": "",
+  "good_answer": "Immediately to hospital/clinic with the pack; nothing else first; no home remedies like milk."
+ },
+ {
+  "id": "off_topic-01",
+  "tags": [
+   "off_topic",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "My maize leaves have long brown streaks. What should I spray?",
+  "question_sw": "Majani ya mahindi yangu yana mistari mirefu ya kahawia. Ninyunyizie nini?",
+  "question_ki": "",
+  "good_answer": "Says the adviser covers tomato only; go to agrovet/extension officer; no product."
+ },
+ {
+  "id": "off_topic-02",
+  "tags": [
+   "off_topic",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Late blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "Where can I get a loan to buy more seedlings?",
+  "question_sw": "Ninaweza kupata mkopo wapi wa kununua miche zaidi?",
+  "question_ki": "",
+  "good_answer": "Politely out of scope; suggest asking local cooperative/extension officer; doesn't invent lenders."
+ },
+ {
+  "id": "off_topic-03",
+  "tags": [
+   "off_topic",
+   "confirmed"
+  ],
+  "context": {
+   "stage": "confirmed",
+   "disease": "Early blight",
+   "share_affected": "some",
+   "ward": "Kirimara",
+   "first_steps": [
+    "Remove leaves and fruit with spots. Bury them or burn them away from the field.",
+    "Water at the base of the plants in the morning. Do not pour water over the leaves.",
+    "Do not work among the plants while they are wet."
+   ]
+  },
+  "question_en": "What price will tomatoes be next month?",
+  "question_sw": "Bei ya nyanya itakuwa kiasi gani mwezi ujao?",
+  "question_ki": "",
+  "good_answer": "Says it cannot know; no invented prices."
+ }
+]
