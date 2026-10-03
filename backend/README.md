@@ -34,3 +34,36 @@ Behaviour:
 - Non-plant or non-tomato photos set `needs_retake` and keep the case `REPORTED`. Otherwise the case moves to
   `DIAGNOSING`, including when the AI fails, because the AI only assists the agrovet.
 - Provider chemical/biological treatment advice is stored but never returned by the API (registered products only).
+
+## Module 4 — Buy Genuine Product
+
+Needs a Daraja sandbox app (https://developer.safaricom.co.ke, test shortcode `174379`) and a free
+OCR.space key (https://ocr.space/ocrapi/freekey). Set the `MPESA_*` and `OCRSPACE_API_KEY` values in `.env`.
+Safaricom must reach `MPESA_CALLBACK_BASE_URL` over HTTPS; in development run `ngrok http 8000` and use its URL.
+Run `celery -A config beat -l info` alongside the worker for payment reconciliation and prescription expiry.
+
+| Endpoint | Who | Process |
+|---|---|---|
+| `GET /api/v1/prescriptions/{code}/stores/?latitude=&longitude=&radius_km=` | Farmer | 5.1 verified stores stocking a prescribed product, nearest first |
+| `POST /api/v1/orders/` | Farmer | 5.2 order (`payment_method`: `mpesa` or `pay_at_shop`) |
+| `POST /api/v1/orders/{id}/pay/` | Farmer | 5.2 STK push to the farmer's phone (202; result arrives by callback) |
+| `POST /api/v1/orders/{id}/cancel/` | Farmer | Cancel an unpaid order |
+| `GET /api/v1/orders/` | Farmer / agrovet | Own orders, or orders at the agrovet's store |
+| `POST /api/v1/agrovet/sales/match/` | Agrovet | 5.3 scan prescription code at pickup; checks product handed over |
+| `POST /api/v1/orders/{id}/label-check/` | Farmer | 5.4 label photo → PCPB number → register + prescription check |
+| `GET /api/v1/rewards/` | Farmer | 5.5 points balance and history |
+| `/api/v1/agrovet/store-items/` | Agrovet | Store catalogue (verified agrovets, registered products only) |
+| `POST /api/v1/payments/mpesa/callback/{token}/` | Safaricom | STK callback |
+
+Behaviour:
+- **Lifecycle:** `PRESCRIBED → PURCHASED` at pickup, then `VERIFIED` (points awarded once) or `FLAGGED`
+  (store excluded for that prescription; ordering elsewhere returns the case to `PRESCRIBED`). Unused
+  prescriptions expire; paid orders never do.
+- **Payments:** one open order per prescription and one open STK prompt per order (DB constraints). Callbacks
+  are idempotent and authenticated by a secret URL token; amounts are checked against the order. Payments with
+  no callback are resolved by STK query every 2 minutes, and time out after 15. Money that arrives for a cancelled
+  order or with the wrong amount is marked `review` for a human.
+- **Label check:** tolerant of OCR errors (B/8, O/0, missing brackets). Unreadable photos can be retaken; a
+  definitive result is final. Repeated failures at one store open a `StoreFlag` for admins.
+- `products`, `agrovets` and `prescriptions` are placeholders built on Documentation §9.2 for Module 3 and agrovet
+  onboarding to take over.

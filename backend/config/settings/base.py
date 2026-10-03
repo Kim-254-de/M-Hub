@@ -34,6 +34,13 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.cases",
     "apps.diagnosis",
+    # Placeholders built against Documentation §9.2; owned by the Prescribe/agrovet work.
+    "apps.products",
+    "apps.agrovets",
+    "apps.prescriptions",
+    # Module 4: Buy Genuine Product
+    "apps.purchases",
+    "apps.rewards",
 ]
 
 MIDDLEWARE = [
@@ -71,6 +78,11 @@ DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DATABASE_CONN_MAX_AGE", default=60)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Cache ------------------------------------------------------------------
+# Used for the M-Pesa OAuth token. Use Redis in production so all workers share it.
+
+CACHES = {"default": env.cache("CACHE_URL", default="locmemcache://")}
 
 # --- Auth -------------------------------------------------------------------
 
@@ -138,6 +150,16 @@ CELERY_TASK_TIME_LIMIT = 120
 CELERY_TASK_SOFT_TIME_LIMIT = 90
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    "reconcile-mpesa-payments": {
+        "task": "apps.purchases.tasks.reconcile_pending_payments_task",
+        "schedule": 120.0,
+    },
+    "expire-prescriptions": {
+        "task": "apps.purchases.tasks.expire_prescriptions_task",
+        "schedule": 15 * 60.0,
+    },
+}
 
 # --- Diagnosis provider (Kindwise crop.health) ------------------------------
 # https://crop.kindwise.com/docs
@@ -166,6 +188,59 @@ DIAGNOSIS = {
     # Minimum probability for the crop to be accepted as tomato.
     "MIN_TOMATO_PROBABILITY": env.float("DIAGNOSIS_MIN_TOMATO", default=0.3),
     "MAX_ATTEMPTS": env.int("DIAGNOSIS_MAX_ATTEMPTS", default=5),
+}
+
+# --- M-Pesa Daraja (STK push) -----------------------------------------------
+# https://developer.safaricom.co.ke/apis/MpesaExpressSimulate
+
+MPESA = {
+    "BASE_URL": env("MPESA_BASE_URL", default="https://sandbox.safaricom.co.ke"),
+    "CONSUMER_KEY": env("MPESA_CONSUMER_KEY", default=""),
+    "CONSUMER_SECRET": env("MPESA_CONSUMER_SECRET", default=""),
+    "SHORTCODE": env("MPESA_SHORTCODE", default=""),
+    "PASSKEY": env("MPESA_PASSKEY", default=""),
+    # CustomerPayBillOnline for a Paybill, CustomerBuyGoodsOnline for a Till.
+    "TRANSACTION_TYPE": env("MPESA_TRANSACTION_TYPE", default="CustomerPayBillOnline"),
+    # For a Till, PartyB is the till number; for a Paybill it equals SHORTCODE.
+    "PARTY_B": env("MPESA_PARTY_B", default=""),
+    # Public HTTPS base URL Safaricom can reach (e.g. an ngrok URL in development).
+    "CALLBACK_BASE_URL": env("MPESA_CALLBACK_BASE_URL", default=""),
+    # Daraja does not sign callbacks; a secret path segment authenticates them.
+    "CALLBACK_TOKEN": env("MPESA_CALLBACK_TOKEN", default=""),
+    "TIMEOUT": (
+        env.float("MPESA_CONNECT_TIMEOUT", default=5.0),
+        env.float("MPESA_READ_TIMEOUT", default=30.0),
+    ),
+}
+
+# --- Label OCR (OCR.space) ---------------------------------------------------
+# https://ocr.space/ocrapi
+
+OCR = {
+    "PROVIDER": env("OCR_PROVIDER", default="ocrspace"),
+    "OCRSPACE_API_KEY": env("OCRSPACE_API_KEY", default=""),
+    "OCRSPACE_URL": env("OCRSPACE_URL", default="https://api.ocr.space/parse/image"),
+    # Engine 2 handles mixed fonts and auto-rotation well; 3 is more accurate but slower.
+    "OCRSPACE_ENGINE": env.int("OCRSPACE_ENGINE", default=2),
+    "TIMEOUT": (env.float("OCR_CONNECT_TIMEOUT", default=5.0), env.float("OCR_READ_TIMEOUT", default=30.0)),
+    # Free tier rejects files over 1 MB.
+    "MAX_UPLOAD_BYTES": env.int("OCR_MAX_UPLOAD_BYTES", default=1024 * 1024),
+}
+
+# --- Module 4: Buy Genuine Product -----------------------------------------
+
+PURCHASES = {
+    "DEFAULT_STORE_RADIUS_KM": env.float("PURCHASES_STORE_RADIUS_KM", default=30.0),
+    "MAX_STORE_RESULTS": env.int("PURCHASES_MAX_STORE_RESULTS", default=20),
+    "REWARD_POINTS_VERIFIED_PURCHASE": env.int("REWARD_POINTS_VERIFIED_PURCHASE", default=10),
+    # Failed label checks for one store within the window that open a store flag.
+    "STORE_FLAG_THRESHOLD": env.int("PURCHASES_STORE_FLAG_THRESHOLD", default=3),
+    "STORE_FLAG_WINDOW_DAYS": env.int("PURCHASES_STORE_FLAG_WINDOW_DAYS", default=90),
+    # Query Daraja for STK payments with no callback after this many seconds.
+    "PAYMENT_RECONCILE_AFTER_SECONDS": env.int("PURCHASES_PAYMENT_RECONCILE_AFTER", default=90),
+    # Give up on an STK payment that is still unresolved after this long.
+    "PAYMENT_TIMEOUT_MINUTES": env.int("PURCHASES_PAYMENT_TIMEOUT_MINUTES", default=15),
+    "MAX_LABEL_PHOTO_BYTES": env.int("PURCHASES_MAX_LABEL_PHOTO_BYTES", default=10 * 1024 * 1024),
 }
 
 # --- Logging ----------------------------------------------------------------
