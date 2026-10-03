@@ -12,3 +12,6 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+
+# The simulator accepts messages for any phone number without authentication.
+WHATSAPP = {**WHATSAPP, "SIMULATOR_ENABLED": False}  # noqa: F405

@@ -21,13 +21,14 @@ def _language(user) -> str:
 
 
 def _to_farmer(case, key: str, purpose: str, source_ref: str, **values):
+    from apps.whatsapp.notify import farmer_event
+
     farmer = case.farmer
-    return queue_sms(
-        to=farmer.phone,
-        body=farmer_message(key, _language(farmer), **values),
-        purpose=purpose,
-        source_ref=source_ref,
-    )
+    body = farmer_message(key, _language(farmer), **values)
+    # Farmers chatting on WhatsApp get the message there (with buttons); everyone else by SMS.
+    if farmer_event(case, key, body, source_ref, values):
+        return None
+    return queue_sms(to=farmer.phone, body=body, purpose=purpose, source_ref=source_ref)
 
 
 def case_in_review(case, ai_diagnosis=None):

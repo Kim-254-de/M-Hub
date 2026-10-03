@@ -68,7 +68,18 @@ def test_swahili_farmer_sees_local_name_and_general_steps_in_swahili(farmer, lat
     assert data["safe_actions"] == GENERAL_SAFE_ACTIONS["sw"]
 
 
-def test_disease_outside_the_catalogue_uses_the_ai_name_and_general_steps(farmer, late_blight):
+def test_disease_outside_the_catalogue_is_not_named_by_default(farmer, late_blight):
+    case = make_case(farmer)
+    add_ai(case, "septoria leaf spot", probability="0.8100")
+
+    data = diagnosis(farmer, case)
+
+    assert data["provisional"]["kind"] == "unsure"
+    assert data["provisional"]["name"] is None
+
+
+def test_disease_outside_the_catalogue_uses_the_ai_name_and_general_steps(farmer, late_blight, settings):
+    settings.DIAGNOSE = {**settings.DIAGNOSE, "NAME_DISEASES_OUTSIDE_CATALOGUE": True}
     case = make_case(farmer)
     add_ai(case, "septoria leaf spot", probability="0.8100")
 
