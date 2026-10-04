@@ -169,7 +169,10 @@ def provisional_result(case: Case) -> dict | None:
     probability = float(top.probability)
     if top.is_healthy:
         return {"kind": "healthy", "disease": None, "name": None, "probability": probability}
-    return {"kind": "likely", "disease": match_disease(top), "name": top.name, "probability": probability}
+    disease = match_disease(top)
+    if disease is None and not settings.DIAGNOSE["NAME_DISEASES_OUTSIDE_CATALOGUE"]:
+        return {"kind": "unsure", "disease": None, "name": None, "probability": None}
+    return {"kind": "likely", "disease": disease, "name": top.name, "probability": probability}
 
 
 def ai_corrected(case: Case, final: FinalDiagnosis) -> bool | None:

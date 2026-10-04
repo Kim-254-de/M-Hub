@@ -238,7 +238,7 @@ def flow(tmp_path, monkeypatch):
         for i in range(1, 4)
     ]
     cases_path = tmp_path / "cases.json"
-    cases_path.write_text(json.dumps(cases))
+    cases_path.write_text(json.dumps(cases), encoding="utf-8")
     monkeypatch.setattr(runner, "CASES_PATH", cases_path)
     monkeypatch.setattr(runner, "HARNESS_FILES", [cases_path])
     monkeypatch.setattr(runner, "FLOW_DIR", tmp_path / "flow")
@@ -260,7 +260,10 @@ def _run(provider, **kwargs):
 
 
 def _results(flow, variant="baseline"):
-    return [json.loads(line) for line in (flow / variant / "results.jsonl").read_text().splitlines()]
+    return [
+        json.loads(line)
+        for line in (flow / variant / "results.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
 
 
 def test_run_needs_an_approved_harness(flow):
@@ -278,7 +281,7 @@ def test_run_writes_rows_and_traces_and_resumes(flow):
     }
     assert all(r["grade"] == {"safe_auto": 1.0} and r["model"] == MODEL and r["usage"] for r in rows)
     assert all(call["allow_fallback"] is False for call in provider.calls)
-    trace = json.loads((flow / "baseline" / "traces" / "explain-01_rep0.json").read_text())
+    trace = json.loads((flow / "baseline" / "traces" / "explain-01_rep0.json").read_text(encoding="utf-8"))
     assert [t["role"] for t in trace] == ["system", "user", "assistant"]
 
     assert _run(provider) == {"ok": 0, "errors": 0}  # resume: nothing left to do
@@ -288,7 +291,10 @@ def test_serving_problems_go_to_errors_not_scores(flow):
     _run(FakeProvider(model="gemini-3.1-pro-preview"), approve_harness=True, reps=1)
     _run(FakeProvider(error=ProviderError("bad request")), reps=1)  # nothing written, so retried
 
-    errors = [json.loads(line) for line in (flow / "baseline" / "errors.jsonl").read_text().splitlines()]
+    errors = [
+        json.loads(line)
+        for line in (flow / "baseline" / "errors.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
     assert {e["class"] for e in errors} == {"model_mismatch", "serving_error"}
     assert not (flow / "baseline" / "results.jsonl").exists() or not _results(flow)
 
@@ -359,7 +365,7 @@ def test_question_export_and_import(flow, tmp_path):
 
 
 def test_shipped_cases_are_well_formed():
-    cases = json.loads(runner.HERE.joinpath("cases.json").read_text())
+    cases = json.loads(runner.HERE.joinpath("cases.json").read_text(encoding="utf-8"))
     assert len(cases) == len({c["id"] for c in cases}) == 40
     for case in cases:
         CaseContext(**case["context"]).describe()

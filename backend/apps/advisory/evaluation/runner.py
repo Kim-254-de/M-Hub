@@ -132,13 +132,13 @@ def harness_sha() -> str:
 
 def read_state() -> dict:
     path = FLOW_DIR / "_state.json"
-    return json.loads(path.read_text()) if path.exists() else {}
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
 def write_state(**changes) -> None:
     FLOW_DIR.mkdir(parents=True, exist_ok=True)
     state = {"metrics": METRICS, "perf_fields": PERF_FIELDS, **read_state(), **changes}
-    (FLOW_DIR / "_state.json").write_text(json.dumps(state, indent=2) + "\n")
+    (FLOW_DIR / "_state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
 
 
 def check_harness(approve: bool) -> str:
@@ -260,7 +260,9 @@ def run(
             {"role": "assistant", "content": advice.raw_text or f"[{reply.stop_reason}]"},
         ]
         trace_name = f"{case['id']}_rep{rep}.json"
-        (out / "traces" / trace_name).write_text(json.dumps(trace, ensure_ascii=False, indent=1))
+        (out / "traces" / trace_name).write_text(
+            json.dumps(trace, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
         row = {
             "prompt_id": case["id"],
             "rep": rep,

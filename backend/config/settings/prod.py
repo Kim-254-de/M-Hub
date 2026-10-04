@@ -23,3 +23,6 @@ SERVE_MEDIA = env.bool("DJANGO_SERVE_MEDIA", default=True)
 
 # Serves collected static files (admin CSS/JS) from gunicorn; no separate web server needed.
 MIDDLEWARE = [MIDDLEWARE[0], "whitenoise.middleware.WhiteNoiseMiddleware", *MIDDLEWARE[1:]]
+
+# The simulator accepts messages for any phone number without authentication.
+WHATSAPP = {**WHATSAPP, "SIMULATOR_ENABLED": False}  # noqa: F405

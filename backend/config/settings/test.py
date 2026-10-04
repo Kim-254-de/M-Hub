@@ -4,7 +4,7 @@ os.environ.setdefault("DJANGO_SECRET_KEY", "test-only-secret-key-not-for-product
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from .base import *  # noqa: E402,F401,F403
-from .base import DIAGNOSIS, MPESA, OCR, SMS  # noqa: E402
+from .base import DIAGNOSIS, MPESA, OCR, SMS, WHATSAPP  # noqa: E402
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 CELERY_TASK_ALWAYS_EAGER = True
@@ -40,6 +40,15 @@ SMS = {
     "AT_USERNAME": "sandbox",
     "AT_API_KEY": "test-at-key",
     "CALLBACK_TOKEN": "test-sms-token",
+}
+WHATSAPP = {
+    **WHATSAPP,
+    "TRANSPORT": "web",
+    "SIMULATOR_ENABLED": True,
+    "ACCESS_TOKEN": "test-wa-token",
+    "PHONE_NUMBER_ID": "1234567890",
+    "APP_SECRET": "test-wa-secret",
+    "VERIFY_TOKEN": "test-wa-verify",
 }
 
 # Registration tests post directly; the OTP tests turn this on.

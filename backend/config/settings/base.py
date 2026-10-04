@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "apps.followups",
     # Reviewed translations of farmer-facing text (Kikuyu first)
     "apps.translations",
+    # Farmer channel: WhatsApp (process 1.0 Register and Route)
+    "apps.whatsapp",
     # Kikuyu crop advice from an LLM, grounded on the case; never products or doses
     "apps.advisory",
 ]
@@ -241,6 +243,9 @@ DIAGNOSE = {
     "AI_MIN_PROBABILITY_FOR_AGREEMENT": env.float("DIAGNOSE_AI_MIN_PROBABILITY", default=0.5),
     # Below this, the farmer's provisional result says the AI is not sure instead of naming a disease.
     "AI_MIN_PROBABILITY_FOR_PROVISIONAL": env.float("DIAGNOSE_AI_PROVISIONAL_MIN_PROBABILITY", default=0.5),
+    # Off: the provisional result names only catalogue diseases (the service covers tomato late and
+    # early blight); anything else is "not sure" until an agrovet looks. On: the AI's own name is shown.
+    "NAME_DISEASES_OUTSIDE_CATALOGUE": env.bool("DIAGNOSE_NAME_DISEASES_OUTSIDE_CATALOGUE", default=False),
     # 3.3 Peer input: farmers in the case's ward with at least this many verified purchases.
     "PEER_MIN_VERIFIED_PURCHASES": env.int("DIAGNOSE_PEER_MIN_VERIFIED", default=1),
     # 3.4/3.6 An unanswered review is withdrawn and the case goes to the next nearest agrovet.
@@ -368,6 +373,30 @@ PURCHASES = {
     # Give up on an STK payment that is still unresolved after this long.
     "PAYMENT_TIMEOUT_MINUTES": env.int("PURCHASES_PAYMENT_TIMEOUT_MINUTES", default=15),
     "MAX_LABEL_PHOTO_BYTES": env.int("PURCHASES_MAX_LABEL_PHOTO_BYTES", default=10 * 1024 * 1024),
+}
+
+# --- WhatsApp channel (Meta Cloud API) ---------------------------------------
+# https://developers.facebook.com/docs/whatsapp/cloud-api
+
+WHATSAPP = {
+    "ENABLED": env.bool("WHATSAPP_ENABLED", default=True),
+    # "cloud" sends through Meta; "web" queues messages for the development simulator page.
+    "TRANSPORT": env("WHATSAPP_TRANSPORT", default="cloud"),
+    "ACCESS_TOKEN": env("WHATSAPP_ACCESS_TOKEN", default=""),
+    "PHONE_NUMBER_ID": env("WHATSAPP_PHONE_NUMBER_ID", default=""),
+    # Verifies Meta's webhook signatures. Webhooks are rejected while it is empty.
+    "APP_SECRET": env("WHATSAPP_APP_SECRET", default=""),
+    "VERIFY_TOKEN": env("WHATSAPP_VERIFY_TOKEN", default=""),
+    "API_VERSION": env("WHATSAPP_API_VERSION", default="v23.0"),
+    "TIMEOUT": (
+        env.float("WHATSAPP_CONNECT_TIMEOUT", default=5.0),
+        env.float("WHATSAPP_READ_TIMEOUT", default=20.0),
+    ),
+    "MAX_ATTEMPTS": env.int("WHATSAPP_MAX_ATTEMPTS", default=4),
+    # Minutes of silence after which a half-finished chat flow returns to the menu.
+    "SESSION_TIMEOUT_MINUTES": env.int("WHATSAPP_SESSION_TIMEOUT_MINUTES", default=60),
+    # Phone-style test page at /whatsapp/simulator/ (requires TRANSPORT=web). Never in production.
+    "SIMULATOR_ENABLED": env.bool("WHATSAPP_SIMULATOR_ENABLED", default=False),
 }
 
 # --- Logging ----------------------------------------------------------------

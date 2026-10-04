@@ -22,15 +22,16 @@ def _language(user) -> str:
 
 
 def _to_farmer(case, key: str, purpose: str, source_ref: str, **values):
+    from apps.whatsapp.notify import farmer_event
+
     farmer = case.farmer
+    body = farmer_message(key, _language(farmer), **values)
+    # Farmers chatting on WhatsApp get the message there (with buttons); everyone else by SMS.
+    if farmer_event(case, key, body, source_ref, values):
+        return None
     if FarmerProfile.objects.filter(user=farmer, notifications_enabled=False).exists():
         return None  # the farmer turned SMS off in the app's settings
-    return queue_sms(
-        to=farmer.phone,
-        body=farmer_message(key, _language(farmer), **values),
-        purpose=purpose,
-        source_ref=source_ref,
-    )
+    return queue_sms(to=farmer.phone, body=body, purpose=purpose, source_ref=source_ref)
 
 
 def case_in_review(case, ai_diagnosis=None):

@@ -26,6 +26,7 @@ from apps.products.models import Product
 from apps.products.pcpb import extract_keys
 from apps.rewards.models import RewardEntry, TrustEvent
 from apps.rewards.services import adjust_trust, award
+from apps.whatsapp import notify as whatsapp_notify
 
 from .integrations import mpesa, ocr
 from .models import Order, Payment, StoreFlag, Verification
@@ -337,6 +338,7 @@ def _apply_payment_result(payment: Payment, *, result_code: str, result_desc: st
         payment.status = Payment.Status.FAILED
         payment.save()
         logger.info("Payment %s failed: %s %s", payment.id, result_code, result_desc)
+        whatsapp_notify.payment_failed(payment)
         return
 
     order = Order.objects.select_for_update().get(pk=payment.order_id)
@@ -348,6 +350,7 @@ def _apply_payment_result(payment: Payment, *, result_code: str, result_desc: st
         order.paid_at = payment.completed_at
         order.save(update_fields=["status", "paid_at", "updated_at"])
         logger.info("Order %s paid (receipt %s)", order.id, payment.mpesa_receipt)
+        whatsapp_notify.order_paid(order)
     else:
         # Money arrived but cannot be applied (wrong amount, or the order was cancelled/paid meanwhile).
         payment.status = Payment.Status.REVIEW
@@ -448,6 +451,7 @@ def match_sale(*, agrovet_user, code: str, product_id) -> Verification:
         transition(
             order.prescription.case_id, from_statuses=[Case.Status.PRESCRIBED], to=Case.Status.PURCHASED
         )
+        whatsapp_notify.order_collected(order)
     logger.info("Order %s collected at %s", order.id, agrovet.name)
     return verification
 

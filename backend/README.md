@@ -167,7 +167,10 @@ Behaviour:
 
 **Before the pilot:** enter diseases (with farmer-facing `local_names` and reviewed `safe_actions` per language),
 treatment rules and product rates in the admin (Products → Diseases; the treatment rules are inline). Treatment rules are agronomic and regulatory content; have them checked against the
-PCPB register and label claims. Nothing is seeded.
+PCPB register and label claims. The service covers tomato late and early blight:
+`python manage.py seed_diseases` adds both (idempotent; admin edits are kept). With
+`DIAGNOSE_NAME_DISEASES_OUTSIDE_CATALOGUE=false` (default) the farmer's provisional result names only catalogue
+diseases; any other AI suggestion is shown as "not sure" until an agrovet looks.
 
 ## Apply and Follow-up (feedback loop)
 
@@ -337,3 +340,33 @@ Behaviour:
   definitive result is final. Repeated failures at one store open a `StoreFlag` for admins.
 - A verified purchase also raises the farmer's trust score (weights their peer input in Diagnose).
 - `agrovets` is still a placeholder built on Documentation §9.2 for agrovet onboarding to take over.
+
+## WhatsApp channel (process 1.0 Register and Route)
+
+Farmers can do everything on WhatsApp: register with just their phone number (and data-use consent),
+upload photos of a sick tomato (farm location chosen once as Mt. Kenya region → county → sub-county → ward,
+IEBC wards in `apps/accounts/locations.py`; then 3 guided photos with the Detect photo checks, 4 quick questions), receive the AI result,
+agrovet confirmation and prescription, find a verified store, pay by M-Pesa or reserve, and check
+the label after pickup. The chat calls the same services as the app (`apps/whatsapp/flow.py`).
+
+- **Notifications:** `notifications.events` sends a farmer's updates on WhatsApp (with buttons such as
+  *Find stores* or *Send new photos*) when they messaged the bot in the last 24 hours, and by SMS
+  otherwise (Meta allows free-form messages only inside that window). Module 4 also tells WhatsApp
+  farmers when a payment succeeds or fails and when the agrovet hands over the product.
+- **Reliability:** every incoming message is stored (de-duplicated by WhatsApp id) and handled in
+  Celery with retries; each farmer's conversation is locked so quick messages run in order; replies
+  are queued in the same transaction and sent after commit.
+- **Security:** webhooks must carry Meta's `X-Hub-Signature-256` for `WHATSAPP_APP_SECRET`, and are
+  rejected while it is unset.
+- **Languages:** English (default), Kiswahili, and Gĩkũyũ through reviewed translations
+  (`whatsapp.*` keys in `export_translations`).
+
+**Development simulator:** with `WHATSAPP_TRANSPORT=web` (the dev default), open
+`http://localhost:8000/whatsapp/simulator/` for a phone-style chat against this backend. It is off in
+production settings. Agrovet steps (confirm the diagnosis, approve the prescription, match the sale)
+are done in the agrovet app/API.
+
+**Real WhatsApp:** set `WHATSAPP_TRANSPORT=cloud` and the `WHATSAPP_*` values, run Celery, expose the
+server (e.g. `ngrok http 8000`), and in Meta → WhatsApp → Configuration set the callback URL to
+`https://<host>/whatsapp/webhook/` with your `WHATSAPP_VERIFY_TOKEN`, subscribed to `messages`.
+Meta's test number can message up to 5 verified recipient phones.

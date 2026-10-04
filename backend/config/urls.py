@@ -26,10 +26,11 @@ urlpatterns = [
     path("api/v1/", include((api_v1, "api"), namespace="v1")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
+    path("whatsapp/", include("apps.whatsapp.urls")),
 ]
 
 if settings.DEBUG:
-    # Local development: uploaded photos and voice notes.
+    # Local development: uploaded photos and voice notes (the simulator shows the farmer's photos).
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 elif getattr(settings, "SERVE_MEDIA", False):
     # Small hosted pilot (Railway volume): Django serves media itself. See config/settings/prod.py.
