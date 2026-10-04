@@ -61,19 +61,19 @@ export const getOutbreaks = () => api<Outbreak[]>('/alerts/nearby/');
 export const createCase = (body: { farm?: string; latitude?: string; longitude?: string }) =>
   api<Case>('/cases/', { method: 'POST', body });
 
-export function uploadPhoto(caseId: string, type: PhotoType, uri: string) {
+export async function uploadPhoto(caseId: string, type: PhotoType, uri: string) {
   const form = new FormData();
   form.append('type', type);
-  form.append('image', filePart(uri, `${type}.jpg`, 'image/jpeg'));
+  form.append('image', await filePart(uri, `${type}.jpg`, 'image/jpeg'));
   return api<CasePhoto>(`/cases/${caseId}/photos/`, { method: 'POST', body: form });
 }
 
 export const saveAnswers = (caseId: string, answers: SymptomAnswers) =>
   api<Case>(`/cases/${caseId}/answers/`, { method: 'PUT', body: answers });
 
-export function uploadVoiceNote(caseId: string, uri: string) {
+export async function uploadVoiceNote(caseId: string, uri: string) {
   const form = new FormData();
-  form.append('audio', filePart(uri, 'voice_note.m4a', 'audio/mp4'));
+  form.append('audio', await filePart(uri, 'voice_note.m4a', 'audio/mp4'));
   return api<Case>(`/cases/${caseId}/voice-note/`, { method: 'POST', body: form });
 }
 
@@ -119,8 +119,8 @@ export const listOrders = () => api<Order[]>('/orders/');
 export const getOrder = (id: string) => api<Order>(`/orders/${id}/`);
 export const payOrder = (id: string) => api<Payment>(`/orders/${id}/pay/`, { method: 'POST', body: {} });
 
-export function checkLabel(orderId: string, uri: string) {
+export async function checkLabel(orderId: string, uri: string) {
   const form = new FormData();
-  form.append('photo', filePart(uri, 'label.jpg', 'image/jpeg'));
+  form.append('photo', await filePart(uri, 'label.jpg', 'image/jpeg'));
   return api<Verification>(`/orders/${orderId}/label-check/`, { method: 'POST', body: form });
 }

@@ -23,6 +23,16 @@ API in `../backend`.
 3. Install **Expo Go** from the Play Store and scan the QR code. Phone and computer must be on the
    same Wi-Fi.
 
+## Run it in a browser (demos and UI checks)
+
+```bash
+npm run web                         # http://localhost:8081
+```
+
+With `EXPO_PUBLIC_API_URL=http://localhost:8000`, the dev backend already allows this origin. For any other
+backend, add the page's origin to `DJANGO_CORS_ALLOWED_ORIGINS` there (e.g. `http://localhost:8081`).
+The camera, offline queue and voice notes behave best on a real phone; test those on a device.
+
 Checks: `npx tsc --noEmit` (types). For a real APK use EAS (`npx eas-cli@latest build -p android`).
 
 ## How it is built

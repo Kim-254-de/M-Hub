@@ -2,6 +2,8 @@
  * Thin fetch wrapper for the AgriSense API: JWT auth with one refresh on 401, JSON and multipart
  * bodies, and errors that carry the API's {detail, code}.
  */
+import { Platform } from 'react-native';
+
 import { getTokens, setTokens } from './tokens';
 import type { ApiErrorBody } from './types';
 
@@ -117,7 +119,12 @@ export async function api<T>(path: string, options: { method?: string; body?: Bo
 }
 
 /** A local file (photo, audio) as a multipart part. */
-export function filePart(uri: string, name: string, type: string): Blob {
+export async function filePart(uri: string, name: string, type: string): Promise<Blob> {
+  // A browser's FormData would send {uri, name, type} as "[object Object]"; read the blob:/data: URI instead.
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(uri)).blob();
+    return new File([blob], name, { type: blob.type || type });
+  }
   // React Native's FormData accepts {uri, name, type}; the cast keeps TypeScript's DOM types happy.
   return { uri, name, type } as unknown as Blob;
 }
