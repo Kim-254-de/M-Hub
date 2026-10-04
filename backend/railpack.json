@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "startCommand": "python manage.py migrate --noinput && if [ \"$SEED_DEMO\" = \"true\" ]; then python manage.py seed_demo --force --skip-existing; fi && python manage.py collectstatic --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+  }
+}

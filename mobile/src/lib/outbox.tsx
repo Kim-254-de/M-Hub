@@ -10,7 +10,7 @@ export function useOutboxSync(enabled: boolean) {
     if (!enabled) return;
     const flush = () =>
       flushOutbox()
-        .then((sent) => {
+        .then(({ sent }) => {
           if (sent > 0) queryClient.invalidateQueries({ queryKey: keys.cases });
         })
         .catch(() => undefined);

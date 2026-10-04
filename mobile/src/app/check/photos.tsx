@@ -1,5 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
@@ -12,7 +13,7 @@ import { ExampleLeaf, ExamplePlant, ExampleStemFruit } from '../../components/Il
 import { Button, Gap, Screen, Text } from '../../components/ui';
 import { TextKey, useI18n } from '../../i18n';
 import { useMe } from '../../lib/queries';
-import { keepFile, PendingReport, pendingReports, saveReport, sendReport, uploadReportPhoto } from '../../offline/reports';
+import { keepFile, PendingReport, pendingReports, phoneIsOffline, saveReport, sendReport, uploadReportPhoto } from '../../offline/reports';
 import { colors, radius, space } from '../../theme/tokens';
 
 const STEPS: Array<{ type: PhotoType; title: TextKey; hint: TextKey; example: ReactNode }> = [
@@ -46,6 +47,7 @@ export default function Photos() {
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Resume a queued report that needs a retake, or start a new one.
   useEffect(() => {
@@ -95,6 +97,20 @@ export default function Photos() {
     }
   };
 
+  // A photo the farmer already has on the phone. The same check runs on upload as for camera photos.
+  const pickFromGallery = async () => {
+    setBusy(true);
+    try {
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+      if (picked.canceled) return;
+      const asset = picked.assets[0];
+      setPreview(await shrink(asset.uri, asset.width, asset.height));
+      setProblem(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const usePhoto = async () => {
     if (!preview || !report) return;
     setBusy(true);
@@ -110,6 +126,12 @@ export default function Photos() {
         setPreview(null);
         return;
       }
+      if (result.status === 'failed') {
+        // Online but the upload did not go through: keep the photo so "Use this photo" retries it.
+        setUploadError(`${t('check.uploadFailed')} (${result.message})`);
+        return;
+      }
+      setUploadError(null);
       setPreview(null);
       if (step < STEPS.length - 1) {
         setStep(step + 1);
@@ -119,23 +141,33 @@ export default function Photos() {
         try {
           caseId = await sendReport(next);
         } catch (error) {
-          if (!(error instanceof ApiError && error.offline)) throw error;
+          if (!(error instanceof ApiError && error.offline && (await phoneIsOffline()))) throw error;
         }
         router.replace({ pathname: '/check/sent', params: caseId ? { caseId } : { localId: next.localId } });
       } else {
         router.replace({ pathname: '/check/questions', params: { localId: next.localId } });
       }
-    } catch {
-      setProblem(t('common.errorBody'));
+    } catch (error) {
+      setUploadError(`${t('check.uploadFailed')} (${error instanceof Error ? error.message : String(error)})`);
     } finally {
       setBusy(false);
     }
   };
 
   if (!permission) return null;
-  if (!permission.granted) {
+  if (!permission.granted && !preview) {
     return (
-      <Screen title={t('check.photosTitle')} onBack={() => router.back()} backLabel={t('common.back')} footer={<Button label={t('check.allowCamera')} icon="camera" onPress={requestPermission} />}>
+      <Screen
+        title={t('check.photosTitle')}
+        onBack={() => router.back()}
+        backLabel={t('common.back')}
+        footer={
+          <>
+            <Button label={t('check.allowCamera')} icon="camera" onPress={requestPermission} />
+            <Button label={t('check.fromGallery')} icon="image" variant="secondary" onPress={pickFromGallery} loading={busy} />
+          </>
+        }
+      >
         <Text>{t('check.cameraPermission')}</Text>
       </Screen>
     );
@@ -153,7 +185,10 @@ export default function Photos() {
             <Button label={t('check.retake')} icon="refresh" variant="secondary" onPress={() => setPreview(null)} disabled={busy} />
           </>
         ) : (
-          <Button label={t('check.takePhoto')} icon="camera" onPress={capture} loading={busy} disabled={!ready} />
+          <>
+            <Button label={t('check.takePhoto')} icon="camera" onPress={capture} loading={busy} disabled={!ready} />
+            <Button label={t('check.fromGallery')} icon="image" variant="secondary" onPress={pickFromGallery} disabled={busy} />
+          </>
         )
       }
     >
@@ -165,6 +200,11 @@ export default function Photos() {
           </Text>
           {problem !== t('check.notClear') ? <Text color={colors.warning}>{problem}</Text> : null}
         </View>
+      ) : null}
+      {uploadError ? (
+        <Text variant="bodyStrong" color={colors.danger} accessibilityLiveRegion="assertive">
+          ⚠ {uploadError}
+        </Text>
       ) : null}
       <Gap size={space.sm} />
       <View style={styles.viewfinder}>

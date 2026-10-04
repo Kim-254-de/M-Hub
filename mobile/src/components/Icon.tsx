@@ -43,7 +43,8 @@ export type IconName =
   | 'tag'
   | 'directions'
   | 'spray'
-  | 'edit';
+  | 'edit'
+  | 'image';
 
 type Props = { name: IconName; size?: number; color?: ColorValue; strokeWidth?: number };
 
@@ -211,4 +212,11 @@ const PATHS: Record<IconName, (s: Stroke) => ReactElement> = {
     </>
   ),
   edit: (s) => <Path {...s} d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />,
+  image: (s) => (
+    <>
+      <Rect {...s} x="3" y="4" width="18" height="16" rx="2" />
+      <Circle {...s} cx="9" cy="9.5" r="1.5" />
+      <Path {...s} d="M21 16l-5-5-9 9" />
+    </>
+  ),
 };

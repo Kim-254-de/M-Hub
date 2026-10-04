@@ -4,11 +4,12 @@
  * A report is removed from the outbox only after the server accepts the submission.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import { ApiError } from '../api/client';
-import { createCase, saveAnswers, submitCase, uploadPhoto, uploadVoiceNote } from '../api/endpoints';
+import { createCase, getCase, saveAnswers, submitCase, uploadPhoto, uploadVoiceNote } from '../api/endpoints';
 import type { PhotoType, SymptomAnswers } from '../api/types';
 
 const KEY = 'agrisense.outbox';
@@ -119,12 +120,27 @@ export async function sendReport(report: PendingReport): Promise<string | null> 
   }
   if (!current.answers) return null; // still being filled in
 
-  await submitCase(caseId);
+  try {
+    await submitCase(caseId);
+  } catch (error) {
+    // The server may have accepted an earlier try whose answer never reached the phone.
+    if (!(error instanceof ApiError) || error.offline || (await getCase(caseId)).status === 'DRAFT') throw error;
+  }
   await removeReport(current.localId);
   return caseId;
 }
 
-export type PhotoUploadResult = { status: 'uploaded' } | { status: 'retake'; message: string } | { status: 'queued' };
+export type PhotoUploadResult =
+  | { status: 'uploaded' }
+  | { status: 'retake'; message: string }
+  | { status: 'queued' }
+  | { status: 'failed'; message: string };
+
+/** Only a phone with no connection queues work; a failure while online must be shown, not hidden. */
+export async function phoneIsOffline(): Promise<boolean> {
+  const state = await NetInfo.fetch();
+  return state.isConnected === false || state.isInternetReachable === false;
+}
 
 /**
  * Upload one photo straight away when there is a connection, so a blurry or dark photo can be
@@ -147,21 +163,26 @@ export async function uploadReportPhoto(report: PendingReport, type: PhotoType):
     if (error instanceof ApiError && error.status === 422) {
       return { report: current, result: { status: 'retake', message: String(error.body?.detail ?? '') } };
     }
-    if (error instanceof ApiError && error.offline) return { report: current, result: { status: 'queued' } };
+    if (error instanceof ApiError && error.offline) {
+      if (await phoneIsOffline()) return { report: current, result: { status: 'queued' } };
+      return { report: current, result: { status: 'failed', message: error.message } };
+    }
     throw error;
   }
 }
 
-/** Try every queued report; called when the phone comes back online and when the app opens. */
-export async function flushOutbox(): Promise<number> {
+/** Try every queued report; called when the phone comes back online, when the app opens and from "Send now". */
+export async function flushOutbox(): Promise<{ sent: number; error: string | null }> {
   let sent = 0;
+  let lastError: string | null = null;
   for (const report of await pendingReports()) {
     if (!report.answers || report.retake) continue; // unfinished, or needs the farmer
     try {
       if (await sendReport(report)) sent += 1;
     } catch (error) {
-      if (error instanceof ApiError && error.offline) break; // still offline; try later
+      lastError = error instanceof Error ? error.message : String(error);
+      if (error instanceof ApiError && error.offline) break; // no answer; try later
     }
   }
-  return sent;
+  return { sent, error: lastError };
 }

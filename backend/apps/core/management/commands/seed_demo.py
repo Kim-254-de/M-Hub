@@ -63,13 +63,19 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--force", action="store_true", help="Run even when DEBUG is off (never in production)"
+            "--force", action="store_true", help="Run even when DEBUG is off (test deployments only)"
+        )
+        parser.add_argument(
+            "--skip-existing", action="store_true", help="Do nothing if the demo farmer exists"
         )
 
     @transaction.atomic
-    def handle(self, *args, force=False, **options):
+    def handle(self, *args, force=False, skip_existing=False, **options):
         if not settings.DEBUG and not force:
             raise CommandError("seed_demo only runs with DEBUG=True.")
+        if skip_existing and User.objects.filter(phone=PHONE).exists():
+            self.stdout.write("Demo data already exists; nothing to do.")
+            return
         if User.objects.filter(phone=PHONE).exists():
             raise CommandError(f"Demo data already exists (farmer {PHONE}).")
         now = timezone.now()

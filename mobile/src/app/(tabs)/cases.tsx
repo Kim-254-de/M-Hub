@@ -9,7 +9,7 @@ import OfflineBanner from '../../components/OfflineBanner';
 import { Button, Loading, Text } from '../../components/ui';
 import { formatDate, useI18n } from '../../i18n';
 import { useCases } from '../../lib/queries';
-import { PendingReport, pendingReports } from '../../offline/reports';
+import { flushOutbox, PendingReport, pendingReports } from '../../offline/reports';
 import { colors, radius, space } from '../../theme/tokens';
 
 /** M1: the farmer's cases, newest first; reports waiting to be sent are shown on top. */
@@ -17,6 +17,18 @@ export default function MyCases() {
   const { t, language } = useI18n();
   const cases = useCases();
   const [queued, setQueued] = useState<PendingReport[]>([]);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const sendNow = async () => {
+    setSending(true);
+    setSendError(null);
+    const result = await flushOutbox();
+    setSendError(result.error);
+    setQueued(await pendingReports());
+    cases.refetch();
+    setSending(false);
+  };
 
   useEffect(() => {
     pendingReports().then(setQueued);
@@ -40,6 +52,13 @@ export default function MyCases() {
             <StatusChip kind="draft" />
             {report.retake ? (
               <Button label={t('diagnosis.retakeAction')} icon="camera" variant="secondary" onPress={() => router.push(`/check/photos?localId=${report.localId}`)} />
+            ) : report.answers ? (
+              <Button label={t('cases.sendNow')} icon="refresh" variant="secondary" onPress={sendNow} loading={sending} />
+            ) : null}
+            {sendError ? (
+              <Text variant="bodyStrong" color={colors.danger}>
+                ⚠ {sendError}
+              </Text>
             ) : null}
           </View>
         ))}

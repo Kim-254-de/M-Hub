@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -90,20 +91,12 @@ export default function LabelCheck() {
     );
   }
 
-  if (!permission?.granted) {
-    return (
-      <Screen title={t('shop.checkLabel')} onBack={() => router.back()} backLabel={t('common.back')} footer={<Button label={t('check.allowCamera')} icon="camera" onPress={requestPermission} />}>
-        <Text>{t('check.cameraPermission')}</Text>
-      </Screen>
-    );
-  }
-
-  const capture = async () => {
-    if (!camera.current || !ready) return;
+  const check = async (getPhoto: () => Promise<{ uri: string; width: number; height: number } | null>) => {
     setBusy(true);
     setError(null);
     try {
-      const photo = await camera.current.takePictureAsync({ quality: 0.8, shutterSound: false });
+      const photo = await getPhoto();
+      if (!photo) return;
       // The label service reads text best around 1200 px; it also keeps the upload small.
       const context = ImageManipulator.manipulate(photo.uri).resize(photo.width >= photo.height ? { width: 1400 } : { height: 1400 });
       const saved = await (await context.renderAsync()).saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
@@ -120,12 +113,44 @@ export default function LabelCheck() {
     }
   };
 
+  const capture = () => check(async () => (camera.current && ready ? camera.current.takePictureAsync({ quality: 0.8, shutterSound: false }) : null));
+  const pickFromGallery = () =>
+    check(async () => {
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+      return picked.canceled ? null : picked.assets[0];
+    });
+  const galleryButton = <Button label={t('check.fromGallery')} icon="image" variant="secondary" onPress={pickFromGallery} disabled={busy} />;
+
+  if (!permission?.granted) {
+    return (
+      <Screen
+        title={t('shop.checkLabel')}
+        onBack={() => router.back()}
+        backLabel={t('common.back')}
+        footer={
+          <>
+            <Button label={t('check.allowCamera')} icon="camera" onPress={requestPermission} />
+            {galleryButton}
+          </>
+        }
+      >
+        <Text>{t('check.cameraPermission')}</Text>
+        {error ? <Text variant="bodyStrong" color={colors.danger}>⚠ {error}</Text> : null}
+      </Screen>
+    );
+  }
+
   return (
     <Screen
       onBack={() => router.back()}
       backLabel={t('common.back')}
       scroll={false}
-      footer={<Button label={t('check.takePhoto')} icon="camera" onPress={capture} loading={busy} disabled={!ready} />}
+      footer={
+        <>
+          <Button label={t('check.takePhoto')} icon="camera" onPress={capture} loading={busy} disabled={!ready} />
+          {galleryButton}
+        </>
+      }
     >
       <PhotoStepHeader step={1} total={1} title={t('shop.labelTitle')} hint={t('shop.labelHint')} example={<ExampleLabel />} />
       {error ? <Text variant="bodyStrong" color={colors.danger}>⚠ {error}</Text> : null}

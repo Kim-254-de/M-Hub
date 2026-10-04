@@ -7,17 +7,21 @@ import type { ApiErrorBody } from './types';
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8000').replace(/\/$/, '') + '/api/v1';
 
-const TIMEOUT_MS = 30_000;
+// Sending a report also runs the AI check on the server (up to ~45 s while there is no background worker).
+const TIMEOUT_MS = 60_000;
+// Photo and audio uploads on rural mobile data can take well over 30 s.
+const UPLOAD_TIMEOUT_MS = 120_000;
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     public body: ApiErrorBody | null,
+    public cause?: string, // for status 0: why the request never got an answer (network error, timeout)
   ) {
-    super(ApiError.describe(body) ?? `Request failed (${status})`);
+    super(ApiError.describe(body) ?? cause ?? `Request failed (${status})`);
   }
 
-  /** True when the request never reached the server (no network, timeout). */
+  /** True when the request never got an answer (no network, timeout). */
   get offline(): boolean {
     return this.status === 0;
   }
@@ -48,9 +52,9 @@ type Body = Record<string, unknown> | FormData | undefined;
 async function send(path: string, method: string, body: Body, access: string | null): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (access) headers.Authorization = `Bearer ${access}`;
+  if (body instanceof FormData) return sendMultipart(path, method, body, headers);
   let payload: BodyInit | undefined;
-  if (body instanceof FormData) payload = body;
-  else if (body !== undefined) {
+  if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
     payload = JSON.stringify(body);
   }
@@ -58,11 +62,30 @@ async function send(path: string, method: string, body: Body, access: string | n
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     return await fetch(API_URL + path, { method, headers, body: payload, signal: controller.signal });
-  } catch {
-    throw new ApiError(0, null);
+  } catch (error) {
+    const cause = controller.signal.aborted ? `No answer after ${TIMEOUT_MS / 1000} s` : String((error as Error)?.message ?? error);
+    throw new ApiError(0, null, cause);
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Multipart uploads go through XMLHttpRequest: Expo replaces the global fetch with expo/fetch, which
+ * rejects React Native's {uri, name, type} file parts ("Unsupported FormData implementation").
+ * React Native's XHR reads those files natively.
+ */
+function sendMultipart(path: string, method: string, body: FormData, headers: Record<string, string>): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, API_URL + path);
+    for (const [key, value] of Object.entries(headers)) xhr.setRequestHeader(key, value);
+    xhr.timeout = UPLOAD_TIMEOUT_MS;
+    xhr.onload = () => resolve(new Response(xhr.responseText || null, { status: xhr.status }));
+    xhr.onerror = () => reject(new ApiError(0, null, 'Network request failed'));
+    xhr.ontimeout = () => reject(new ApiError(0, null, `No answer after ${UPLOAD_TIMEOUT_MS / 1000} s`));
+    xhr.send(body);
+  });
 }
 
 async function refreshAccess(): Promise<string | null> {

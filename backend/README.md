@@ -15,6 +15,15 @@ celery -A config worker -l info                      # in a second terminal (nee
 
 API docs: `/api/docs/`. Tests: `pytest`. Lint: `ruff check . && ruff format --check .`
 
+## Hosting (Railway)
+
+Live API: https://api-production-9d53.up.railway.app (`/health/`, `/api/docs/`, `/admin/`). Project `agrisense`,
+services `api` (this folder) and `Postgres`; photos and voice notes on the `api-volume` volume at `/data`.
+Deploy from this folder with `railway up --service api`. `railway.json` / `railpack.json` hold the start
+command (migrate, optional demo seed when `SEED_DEMO=true`, collectstatic, gunicorn). Celery runs tasks inline
+(`CELERY_TASK_ALWAYS_EAGER=true`) until a Redis worker is added. Set secrets with
+`railway variables --service api --set KEY=value` (e.g. `GEMINI_API_KEY`, `AT_API_KEY`, M-Pesa keys).
+
 ## Auth
 
 Farmers register and log in with phone number + 4–6 digit PIN and get JWTs (`Authorization: Bearer <access>`).

@@ -57,7 +57,14 @@ export const useCase = (id: string) =>
         ? POLL_WHILE_WAITING
         : false,
   });
-export const useDiagnosis = (id: string) => useQuery({ queryKey: keys.diagnosis(id), queryFn: () => endpoints.getDiagnosis(id) });
+export const useDiagnosis = (id: string) =>
+  useQuery({
+    queryKey: keys.diagnosis(id),
+    queryFn: () => endpoints.getDiagnosis(id),
+    enabled: !!id,
+    // Poll while waiting so the AI suggestion and the agrovet's confirmation appear without a refresh.
+    refetchInterval: (query) => (query.state.data && !query.state.data.confirmed_by ? POLL_WHILE_WAITING : false),
+  });
 export const usePrescription = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.prescription(id), queryFn: () => orNull(endpoints.getPrescription(id)), enabled });
 export const useFollowUp = (id: string, enabled = true) =>

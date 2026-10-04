@@ -8,7 +8,7 @@ import { OptionSelector } from '../../components/blocks';
 import Icon from '../../components/Icon';
 import { Button, Row, Screen, Text } from '../../components/ui';
 import { useI18n } from '../../i18n';
-import { keepFile, pendingReports, saveReport, sendReport } from '../../offline/reports';
+import { keepFile, pendingReports, phoneIsOffline, saveReport, sendReport } from '../../offline/reports';
 import { ApiError } from '../../api/client';
 import { colors, radius, space } from '../../theme/tokens';
 
@@ -82,10 +82,11 @@ export default function Questions() {
       const caseId = await sendReport(ready);
       router.replace({ pathname: '/check/sent', params: caseId ? { caseId } : { localId } });
     } catch (e) {
-      if (e instanceof ApiError && e.offline) {
+      if (e instanceof ApiError && e.offline && (await phoneIsOffline())) {
         router.replace({ pathname: '/check/sent', params: { localId } }); // queued; sent when back online
       } else {
-        setError(e instanceof ApiError ? e.message : t('common.errorBody'));
+        // Online but it did not go through: say why and let the farmer press Send again.
+        setError(`${t('check.sendFailed')} (${e instanceof Error ? e.message : String(e)})`);
       }
     } finally {
       setBusy(false);
