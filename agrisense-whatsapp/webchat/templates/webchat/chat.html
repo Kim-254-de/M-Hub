@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AgriSense Hub — Chat</title>
+<style>
+  :root {
+    --brand: #0b6b4f;          /* app bar */
+    --brand-dark: #08523c;     /* status bar */
+    --accent: #1fa463;         /* send button, verified */
+    --link: #027eb5;           /* interactive buttons */
+    --wall: #efe9df;
+    --out: #d9fdd3;
+    --in: #ffffff;
+    --ink: #111b21;
+    --muted: #667781;
+    --tick: #53bdeb;
+    --stage: #0f1720;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 20% 0%, #17324a 0%, var(--stage) 60%);
+    color: #e7edf3;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  /* ---------- presenter bar ---------- */
+  .topbar { display: flex; align-items: center; gap: 16px; padding: 14px 24px; }
+  .topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: .2px; }
+  .topbar .brand small { font-weight: 400; color: #9fb3c4; font-size: 13px; }
+  .topbar .spacer { flex: 1; }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #9fe3bd;
+          background: rgba(31,164,99,.12); border: 1px solid rgba(31,164,99,.35); padding: 4px 10px; border-radius: 99px; }
+  .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2fd07a; box-shadow: 0 0 0 3px rgba(47,208,122,.2); }
+  .btn-ghost { background: transparent; color: #cfdbe6; border: 1px solid #33475a; border-radius: 8px;
+               padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn-ghost:hover { background: #1b2a38; }
+  .tabs { display: none; }
+  /* ---------- stage ---------- */
+  .stage { flex: 1; display: flex; justify-content: center; align-items: flex-start; gap: 56px; padding: 8px 24px 32px; flex-wrap: wrap; }
+  .device-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .device-label { font-size: 13px; color: #b9c8d6; display: flex; gap: 8px; align-items: center; }
+  .device-label b { color: #fff; font-weight: 600; }
+  .device-label .ping { width: 8px; height: 8px; border-radius: 50%; background: #2fd07a; opacity: 0; transition: opacity .2s; }
+  .device-label .ping.on { opacity: 1; animation: pulse 1s ease-out 3; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47,208,122,.6); } 100% { box-shadow: 0 0 0 10px rgba(47,208,122,0); } }
+  .device { width: 380px; height: 790px; border-radius: 52px; padding: 12px; background: #0a0a0a;
+            box-shadow: 0 0 0 2px #2b2f33, 0 30px 80px rgba(0,0,0,.55); position: relative; }
+  .device::before { content: ""; position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+                    width: 96px; height: 26px; border-radius: 20px; background: #000; z-index: 5; }
+  .screen { width: 100%; height: 100%; border-radius: 42px; overflow: hidden; position: relative;
+            display: flex; flex-direction: column; background: var(--wall); color: var(--ink); }
+  /* ---------- app chrome ---------- */
+  .statusbar { height: 44px; background: var(--brand-dark); color: #fff; display: flex; align-items: flex-end;
+               justify-content: space-between; padding: 0 26px 6px; font-size: 13px; font-weight: 600; }
+  .statusbar .icons { display: flex; gap: 6px; align-items: center; }
+  .appbar { background: var(--brand); color: #fff; display: flex; align-items: center; gap: 8px; padding: 8px 10px 10px 6px; }
+  .appbar .back { width: 22px; height: 22px; opacity: .95; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; }
+  .who { flex: 1; min-width: 0; }
+  .who .name { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .who .sub { font-size: 12.5px; opacity: .85; height: 16px; }
+  .appbar .acts { display: flex; gap: 18px; padding-right: 6px; opacity: .95; }
+  /* ---------- chat ---------- */
+  .chat { flex: 1; overflow-y: auto; padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 3px;
+          background-color: var(--wall);
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23d9cfbf' stroke-width='1.2' opacity='.7'%3E%3Cpath d='M18 30c8-10 20-10 26 0-8 8-18 8-26 0z'/%3E%3Cpath d='M31 30v10'/%3E%3Ccircle cx='86' cy='22' r='5'/%3E%3Cpath d='M70 78c6-12 22-14 30-4-8 10-22 12-30 4z'/%3E%3Cpath d='M85 76l-6 14'/%3E%3Cpath d='M16 92l8-8 8 8-8 8z'/%3E%3Ccircle cx='54' cy='60' r='2.5'/%3E%3Cpath d='M100 104c3-6 9-6 12 0'/%3E%3C/g%3E%3C/svg%3E");
+          scrollbar-width: thin; }
+  .chip { align-self: center; background: #fff; color: var(--muted); font-size: 12px; padding: 5px 12px;
+          border-radius: 8px; margin: 6px 0 8px; box-shadow: 0 1px .5px rgba(11,20,26,.13); }
+  .chip.info { background: #fff5c4; color: #54656f; text-align: center; max-width: 88%; line-height: 1.35; }
+  .row { display: flex; flex-direction: column; max-width: 84%; margin-top: 4px; }
+  .row.out { align-self: flex-start; }   /* AgriSense (left) */
+  .row.in { align-self: flex-end; }      /* user (right) */
+  .bubble { position: relative; padding: 6px 8px 7px 9px; border-radius: 8px; font-size: 14.2px; line-height: 1.38;
+            box-shadow: 0 1px .5px rgba(11,20,26,.13); word-wrap: break-word; overflow-wrap: anywhere; }
+  .row.out .bubble { background: var(--in); border-top-left-radius: 0; }
+  .row.in .bubble { background: var(--out); border-top-right-radius: 0; }
+  .row.out.first .bubble::before, .row.in.first .bubble::before { content: ""; position: absolute; top: 0; width: 8px; height: 13px; }
+  .row.out.first .bubble::before { left: -8px; background: var(--in); clip-path: polygon(100% 0, 0 0, 100% 100%); }
+  .row.in.first .bubble::before { right: -8px; background: var(--out); clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .row:not(.first) .bubble { border-radius: 8px; }
+  .bubble .hdr { font-weight: 700; margin-bottom: 2px; }
+  .bubble .ftr { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .meta { float: right; margin: 6px 0 -4px 10px; font-size: 11px; color: var(--muted); display: inline-flex; align-items: center; gap: 3px; }
+  .meta svg { width: 16px; height: 11px; }
+  .meta .tick { color: #8696a0; } .meta .tick.read { color: var(--tick); }
+  .bubble img.photo { display: block; width: 100%; max-width: 250px; border-radius: 6px; margin: -2px -4px 4px -5px;
+                      width: calc(100% + 9px); max-width: 262px; }
+  .bubble code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+  .btns { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+  .btns button, .listbtn { background: var(--in); border: 0; border-radius: 8px; color: var(--link); font: inherit; font-size: 14.2px;
+                 font-weight: 500; padding: 9px 10px; cursor: pointer; box-shadow: 0 1px .5px rgba(11,20,26,.13);
+                 display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btns button:hover, .listbtn:hover { background: #f5f6f6; }
+  .btns button:active, .listbtn:active { background: #e9edef; }
+  .listbtn { margin: 6px -8px -7px -9px; border-radius: 0 0 8px 8px; box-shadow: none; border-top: 1px solid #e9edef; width: calc(100% + 17px); }
+  .typing { align-self: flex-start; background: #fff; border-radius: 8px; border-top-left-radius: 0; padding: 10px 12px; margin-top: 4px;
+            display: none; gap: 4px; box-shadow: 0 1px .5px rgba(11,20,26,.13); }
+  .typing.on { display: inline-flex; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: #9aa5ac; animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+  .suggest { display: flex; gap: 6px; padding: 0 12px 6px; flex-wrap: wrap; }
+  .suggest button { background: #fff; border: 1px solid #d1d7db; color: var(--brand); border-radius: 99px; padding: 5px 12px;
+                    font: inherit; font-size: 13px; cursor: pointer; }
+  /* ---------- composer ---------- */
+  .composer { display: flex; align-items: flex-end; gap: 6px; padding: 6px 8px 14px; background: transparent; }
+  .pill { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 24px; padding: 6px 12px; min-height: 46px;
+          box-shadow: 0 1px .5px rgba(11,20,26,.13); }
+  .pill input { flex: 1; border: 0; outline: 0; font: inherit; font-size: 15px; background: transparent; color: var(--ink); min-width: 0; }
+  .pill .ic { color: #8696a0; width: 22px; height: 22px; cursor: pointer; flex: none; }
+  .round { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; display: grid; place-items: center; cursor: pointer; flex: none; }
+  .round:active { transform: scale(.95); }
+  /* ---------- list sheet ---------- */
+  .sheet-bg { position: absolute; inset: 0; background: rgba(11,20,26,.4); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+  .sheet-bg.on { opacity: 1; pointer-events: auto; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 18px 18px 0 0; max-height: 78%; display: flex; flex-direction: column;
+           transform: translateY(100%); transition: transform .25s ease; z-index: 21; }
+  .sheet.on { transform: translateY(0); }
+  .sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: #d1d7db; margin: 8px auto 2px; }
+  .sheet .shead { display: flex; align-items: center; padding: 8px 16px 10px; border-bottom: 1px solid #e9edef; }
+  .sheet .shead b { flex: 1; text-align: center; font-size: 16px; }
+  .sheet .x { background: none; border: 0; font-size: 22px; color: #54656f; cursor: pointer; width: 28px; }
+  .sheet .sbody { overflow-y: auto; padding-bottom: 8px; }
+  .sheet .stitle { font-size: 13px; color: var(--brand); font-weight: 600; padding: 14px 18px 6px; }
+  .sheet label { display: flex; align-items: center; gap: 12px; padding: 10px 18px; cursor: pointer; }
+  .sheet label:hover { background: #f5f6f6; }
+  .sheet label .t { font-size: 15px; } .sheet label .d { font-size: 13px; color: var(--muted); margin-top: 1px; }
+  .sheet label .txt { flex: 1; }
+  .sheet input[type=radio] { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+  .sheet .sfoot { display: flex; justify-content: flex-end; padding: 8px 16px 18px; }
+  .sheet .sfoot .round:disabled { background: #b4c3bc; cursor: default; }
+  /* ---------- M-Pesa style prompt ---------- */
+  .stk-bg { position: absolute; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 30; padding: 22px; }
+  .stk-bg.on { display: flex; }
+  .stk { width: 100%; background: #fafafa; border-radius: 14px; padding: 20px 20px 10px; box-shadow: 0 20px 50px rgba(0,0,0,.35); font-size: 15px; color: #222; }
+  .stk .app { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5d6b63; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+  .stk .app span { width: 18px; height: 18px; border-radius: 4px; background: #3aa935; display: inline-block; }
+  .stk p { margin: 0 0 14px; line-height: 1.45; }
+  .stk input { width: 100%; border: 0; border-bottom: 2px solid #3aa935; background: transparent; font-size: 22px; letter-spacing: 10px; padding: 6px 2px; outline: 0; text-align: center; }
+  .stk .act { display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; }
+  .stk .act button { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 600; color: #2e7d32; padding: 10px 14px; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+  .stk .act button:hover { background: #eef5ee; }
+  .toast { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); background: rgba(17,27,33,.88); color: #fff; font-size: 13px; padding: 8px 14px; border-radius: 8px; z-index: 40; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+  .toast.on { opacity: 1; }
+  /* ---------- mobile: real full-screen chat, tabs between phones ---------- */
+  @media (max-width: 860px) {
+    .topbar { padding: 8px 10px; gap: 8px; height: 56px; }
+    .topbar .brand { font-size: 15px; gap: 8px; white-space: nowrap; }
+    .topbar .brand small, .live { display: none; }
+    .topbar .brand > div { display: none; }
+    .btn-ghost { padding: 6px 10px; font-size: 12px; }
+    .tabs { display: flex; gap: 4px; background: #1b2a38; border-radius: 9px; padding: 3px; }
+    .tabs button { background: none; border: 0; color: #b9c8d6; font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 7px; cursor: pointer; }
+    .tabs button.on { background: #2c4157; color: #fff; }
+    .stage { padding: 0; gap: 0; }
+    .device-wrap { width: 100%; }
+    .device-wrap.hidden { display: none; }
+    .device-label { display: none; }
+    .device { width: 100%; height: calc(100vh - 56px); height: calc(100dvh - 56px); border-radius: 0; padding: 0; box-shadow: none; }
+    .device::before { display: none; }
+    .screen { border-radius: 0; }
+    .statusbar { display: none; }
+  }
+  body.single .topbar { display: none; }
+  body.single .device { height: 100vh; height: 100dvh; }
+  @media (min-width: 861px) { body.single .stage { padding-top: 24px; } }
+</style>
+</head>
+<body class="{% if single %}single{% endif %}">
+
+<div class="topbar">
+  <div class="brand">
+    <svg width="28" height="28" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#1fa463"/><path d="M12 27c0-9 6-15 17-15 0 11-6 17-15 17-1 0-2 0-2-2z" fill="#fff"/><path d="M13 27c4-5 8-8 13-11" stroke="#1fa463" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    <div>AgriSense Hub <small>· farmer chat</small></div>
+  </div>
+  <span class="live">Connected to AgriSense backend</span>
+  <div class="spacer"></div>
+  <div class="tabs" id="tabs">
+    <button class="on" data-tab="farmer">Farmer</button>
+    {% if agrovet_phone %}<button data-tab="agrovet">Agrovet</button>{% endif %}
+  </div>
+  <button class="btn-ghost" id="reset">Restart</button>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<template id="phone-tpl">
+  <div class="device-wrap">
+    <div class="device-label"><span class="ping"></span><span class="lbl"></span></div>
+    <div class="device">
+      <div class="screen">
+        <div class="statusbar"><span class="clock">9:41</span>
+          <span class="icons">
+            <svg width="17" height="11" viewBox="0 0 17 11" fill="#fff"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="#fff"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3C13.3 1.4 10.8.4 8 .4S2.7 1.4.8 3.3L2 4.6c1.6-1.5 3.7-2.4 6-2.4zm0 3.4c1.4 0 2.7.5 3.6 1.4l1.2-1.3C11.5 4.5 9.8 3.8 8 3.8s-3.5.7-4.8 1.9L4.4 7C5.3 6.1 6.6 5.6 8 5.6zm0 3.3c.5 0 1 .2 1.3.5L8 11 6.7 9.4c.3-.3.8-.5 1.3-.5z"/></svg>
+            <svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3" fill="none" stroke="#fff" opacity=".6"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="#fff"/><rect x="22.5" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".6"/></svg>
+          </span>
+        </div>
+        <div class="appbar">
+          <svg class="back" viewBox="0 0 24 24" fill="#fff"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
+          <div class="avatar"><svg width="30" height="30" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1fa463"/><path d="M12 27c0-9 6-15 17-15 0 11-6 17-15 17-1 0-2 0-2-2z" fill="#fff"/><path d="M13 27c4-5 8-8 13-11" stroke="#1fa463" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+          <div class="who">
+            <div class="name">AgriSense Hub
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-label="verified business"><path fill="#25d07a" d="M12 1l2.6 2.1 3.3-.3 1 3.2 3 1.6-.9 3.2 1.4 3-2.6 2.1-.2 3.3-3.3.5-1.8 2.8-3.1-1.2-3.1 1.2-1.8-2.8-3.3-.5-.2-3.3L1.6 14l1.4-3-.9-3.2 3-1.6 1-3.2 3.3.3z"/><path d="M7.5 12.3l3 3 6-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="sub">Business account</div>
+          </div>
+          <div class="acts">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </div>
+        </div>
+        <div class="chat">
+          <div class="chip">TODAY</div>
+          <div class="chip info">🔒 Messages are handled by AgriSense Hub. AgriSense never asks for your M-Pesa PIN in chat.</div>
+          <div class="typing"><i></i><i></i><i></i></div>
+        </div>
+        <div class="suggest"></div>
+        <form class="composer" autocomplete="off">
+          <div class="pill">
+            <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3.5-9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm7 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM12 17.5c2.3 0 4.3-1.4 5.1-3.5H6.9c.8 2.1 2.8 3.5 5.1 3.5z"/></svg>
+            <input type="text" placeholder="Message" enterkeyhint="send">
+            <svg class="ic attach" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6.5v10.6a4.5 4.5 0 0 1-9 0V5.5a3 3 0 0 1 6 0V16a1.5 1.5 0 0 1-3 0V6.5H9V16a3 3 0 0 0 6 0V5.5a4.5 4.5 0 0 0-9 0v11.6a6 6 0 0 0 12 0V6.5z"/></svg>
+            <svg class="ic camera" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2 7.2 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.2L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+            <input type="file" accept="image/*" class="file" hidden>
+            <input type="file" accept="image/*" capture="environment" class="cam" hidden>
+          </div>
+          <button class="round send" type="submit" aria-label="Send">
+            <svg class="mic" width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 15a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v7a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.9V22h2v-3.1A7 7 0 0 0 19 12h-1.7z"/></svg>
+            <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="#fff" style="display:none"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </button>
+        </form>
+        <div class="sheet-bg"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="shead"><button class="x" type="button" aria-label="Close">×</button><b class="stitle-main"></b><span style="width:28px"></span></div>
+          <div class="sbody"></div>
+          <div class="sfoot"><button class="round ssend" type="button" disabled aria-label="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button></div>
+        </div>
+        <div class="stk-bg">
+          <div class="stk">
+            <div class="app"><span></span>M-PESA</div>
+            <p class="stk-text"></p>
+            <input type="password" inputmode="numeric" maxlength="4" placeholder="••••" class="pin">
+            <div class="act"><button type="button" class="cancel">Cancel</button><button type="button" class="ok">Send</button></div>
+          </div>
+        </div>
+        <div class="toast"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+const CONFIG = {
+  farmer: { phone: "{{ farmer_phone|escapejs }}", name: "{{ farmer_name|escapejs }}", label: "Farmer" },
+  agrovet: { phone: "{{ agrovet_phone|escapejs }}", name: "{{ agrovet_name|escapejs }}", label: "Agrovet" },
+  single: {{ single|yesno:"true,false" }},
+};
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function fmt(text) {
+  let h = esc(text);
+  h = h.replace(/```([\s\S]+?)```/g, "<code>$1</code>");
+  h = h.replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s).,!?:;<]|$)/g, "$1<b>$2</b>");
+  h = h.replace(/(^|[\s(>])_([^_\n]+)_(?=[\s).,!?:;<]|$)/g, "$1<i>$2</i>");
+  h = h.replace(/(^|[\s(>])~([^~\n]+)~(?=[\s).,!?:;<]|$)/g, "$1<s>$2</s>");
+  return h.replace(/\n/g, "<br>");
+}
+const local = p => p && p.startsWith("254") ? "0" + p.slice(3) : p;
+const pretty = p => { const l = local(p) || ""; return l.replace(/^(\d{4})(\d{3})(\d{3})$/, "$1 $2 $3"); };
+const TICK = '<svg viewBox="0 0 16 11" fill="currentColor"><path d="M11.1.6 4.9 7.6 2.3 5 1.2 6.1l3.7 3.7L12.2 1.6zM14.9.6 8.7 7.6l-.8-.8-1.1 1.2 1.9 1.8L16 1.6z"/></svg>';
+const FOLLOWUP_LABELS = { worked: "Yes, it worked", partly: "Partly", no_change: "No change" };
+
+class Phone {
+  constructor(role) {
+    const cfg = CONFIG[role];
+    this.role = role; this.phone = cfg.phone; this.name = cfg.name;
+    this.after = 0; this.lastDir = null; this.waiting = 0; this.seen = new Set();
+    const node = document.getElementById("phone-tpl").content.firstElementChild.cloneNode(true);
+    node.dataset.role = role;
+    this.root = node;
+    const $ = s => node.querySelector(s);
+    this.chat = $(".chat"); this.typing = $(".typing"); this.sub = $(".sub");
+    this.input = $(".composer input[type=text]"); this.ping = $(".ping");
+    this.sheetBg = $(".sheet-bg"); this.sheet = $(".sheet"); this.sbody = $(".sbody"); this.ssend = $(".ssend");
+    this.stkBg = $(".stk-bg"); this.toastEl = $(".toast"); this.suggestEl = $(".suggest");
+    $(".lbl").innerHTML = `<b>${esc(cfg.label)}</b> · ${esc(pretty(this.phone))}${cfg.name && role === "agrovet" ? " · " + esc(cfg.name) : ""}`;
+    this.setClock($(".clock"));
+
+    $(".composer").addEventListener("submit", e => { e.preventDefault(); const t = this.input.value.trim(); if (t) { this.input.value = ""; this.toggleSend(); this.send({ text: t }); } });
+    this.input.addEventListener("input", () => this.toggleSend());
+    $(".attach").addEventListener("click", () => $(".file").click());
+    $(".camera").addEventListener("click", () => $(".cam").click());
+    for (const sel of [".file", ".cam"]) $(sel).addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) this.sendImage(f); });
+    this.sheetBg.addEventListener("click", () => this.closeSheet());
+    $(".x").addEventListener("click", () => this.closeSheet());
+    this.ssend.addEventListener("click", () => {
+      const r = this.sbody.querySelector("input:checked"); if (!r) return;
+      this.closeSheet(); this.send({ reply_id: r.value, title: r.dataset.title });
+    });
+    this.sbody.addEventListener("change", () => { this.ssend.disabled = !this.sbody.querySelector("input:checked"); });
+    $(".stk .ok").addEventListener("click", () => this.stkAnswer("ok"));
+    $(".stk .cancel").addEventListener("click", () => this.stkAnswer("cancel"));
+    $(".pin").addEventListener("keydown", e => { if (e.key === "Enter") this.stkAnswer("ok"); });
+    this.renderSuggest();
+  }
+  setClock(el) { const tick = () => { const d = new Date(); el.textContent = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }; tick(); setInterval(tick, 20000); }
+  toggleSend() {
+    const has = !!this.input.value.trim();
+    this.root.querySelector(".mic").style.display = has ? "none" : "";
+    this.root.querySelector(".arrow").style.display = has ? "" : "none";
+  }
+  renderSuggest() {
+    const empty = this.after === 0;
+    const items = this.role === "farmer" ? ["Hi", "Menu"] : ["reviews"];
+    this.suggestEl.innerHTML = empty ? items.map(i => `<button type="button">${esc(i)}</button>`).join("") : "";
+    this.suggestEl.querySelectorAll("button").forEach(b => b.onclick = () => this.send({ text: b.textContent }));
+  }
+  toast(msg) { this.toastEl.textContent = msg; this.toastEl.classList.add("on"); clearTimeout(this._tt); this._tt = setTimeout(() => this.toastEl.classList.remove("on"), 2200); }
+  setTyping(on) {
+    this.typing.classList.toggle("on", on);
+    this.sub.textContent = on ? "typing…" : "Business account";
+    if (on) this.scroll();
+  }
+  scroll() { requestAnimationFrame(() => { this.chat.scrollTop = this.chat.scrollHeight; }); }
+
+  async send(fields) {
+    const fd = new FormData();
+    fd.append("phone", this.phone); fd.append("name", this.name);
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    this.waiting = Date.now(); this.setTyping(true);
+    try {
+      const r = await fetch("api/send/", { method: "POST", body: fd });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); this.toast(j.error || "Couldn't send"); }
+    } catch { this.toast("No connection to server"); }
+    this.poll();
+  }
+  sendImage(file) {
+    if (!file.type.startsWith("image/")) return this.toast("Please choose a photo");
+    this.send({ image: file });
+  }
+
+  async poll() {
+    try {
+      const r = await fetch(`api/inbox/?phone=${encodeURIComponent(this.phone)}&after=${this.after}`);
+      const { messages } = await r.json();
+      let gotOut = false;
+      for (const m of messages) {
+        if (this.seen.has(m.id)) continue;
+        this.seen.add(m.id); this.after = Math.max(this.after, m.id);
+        if (m.dir === "stk") { if (!m.payload.resolved) this.showStk(m.payload); continue; }
+        this.render(m);
+        if (m.dir === "out") gotOut = true;
+      }
+      if (gotOut) {
+        this.chat.querySelectorAll(".tick").forEach(t => t.classList.add("read"));
+        this.setTyping(false); this.waiting = 0;
+        if (document.hidden || this.root.classList.contains("hidden") || CONFIG.single === false) this.flash();
+      }
+      if (messages.length) this.renderSuggest();
+    } catch { /* server restarting — try again next tick */ }
+    if (this.waiting && Date.now() - this.waiting > 25000) { this.setTyping(false); this.waiting = 0; }
+  }
+  flash() { this.ping.classList.remove("on"); void this.ping.offsetWidth; this.ping.classList.add("on"); }
+
+  row(dir) {
+    const row = document.createElement("div");
+    row.className = "row " + dir + (this.lastDir !== dir ? " first" : "");
+    this.lastDir = dir;
+    this.chat.insertBefore(row, this.typing);
+    return row;
+  }
+  meta(time, dir) { return `<span class="meta">${esc(time)}${dir === "in" ? `<span class="tick">${TICK}</span>` : ""}</span>`; }
+
+  render(m) {
+    const p = m.payload, dir = m.dir;
+    const row = this.row(dir);
+    if (dir === "in") {
+      if (p.type === "image") row.innerHTML = `<div class="bubble"><img class="photo" src="${esc(p.url)}" alt="">${p.caption ? fmt(p.caption) : ""}${this.meta(m.time, dir)}</div>`;
+      else row.innerHTML = `<div class="bubble">${fmt(p.text)}${this.meta(m.time, dir)}</div>`;
+      this.scroll(); return;
+    }
+    if (p.type === "text") {
+      row.innerHTML = `<div class="bubble">${fmt(p.text.body)}${this.meta(m.time, dir)}</div>`;
+    } else if (p.type === "image") {
+      row.innerHTML = `<div class="bubble"><img class="photo" src="${esc(p.image.link)}" alt="">${fmt(p.image.caption || "")}${this.meta(m.time, dir)}</div>`;
+    } else if (p.type === "interactive") {
+      const it = p.interactive;
+      const hdr = it.header ? `<div class="hdr">${fmt(it.header.text)}</div>` : "";
+      const ftr = it.footer ? `<div class="ftr">${fmt(it.footer.text)}</div>` : "";
+      if (it.type === "button") {
+        row.innerHTML = `<div class="bubble">${hdr}${fmt(it.body.text)}${ftr}${this.meta(m.time, dir)}</div><div class="btns"></div>`;
+        const box = row.querySelector(".btns");
+        for (const b of it.action.buttons) this.addButton(box, b.reply.id, b.reply.title);
+      } else {
+        row.innerHTML = `<div class="bubble">${hdr}${fmt(it.body.text)}${ftr}${this.meta(m.time, dir)}<button type="button" class="listbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zm-4 5h2v2H3zm4 0h14v2H7z"/></svg>${esc(it.action.button)}</button></div>`;
+        row.querySelector(".listbtn").onclick = () => this.openSheet(it.action);
+      }
+    } else if (p.type === "template") {
+      const params = (p.template.components || []).find(c => c.type === "body")?.parameters?.map(x => x.text) || [];
+      const btns = (p.template.components || []).filter(c => c.type === "button").map(c => c.parameters[0].payload);
+      const body = p.template.name === "treatment_followup"
+        ? `👋 ${params[0] || ""}, did the treatment for *${params[1] || ""}* on your ${params[2] || ""} work?`
+        : `📨 ${p.template.name}`;
+      row.innerHTML = `<div class="bubble">${fmt(body)}${this.meta(m.time, dir)}</div><div class="btns"></div>`;
+      for (const pl of btns) this.addButton(row.querySelector(".btns"), pl, FOLLOWUP_LABELS[pl.split(":").pop()] || pl);
+    } else {
+      row.innerHTML = `<div class="bubble">${esc(JSON.stringify(p))}</div>`;
+    }
+    this.scroll();
+  }
+  addButton(box, id, title) {
+    const b = document.createElement("button");
+    b.type = "button"; b.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>${esc(title)}`;
+    b.onclick = () => this.send({ reply_id: id, title });
+    box.appendChild(b);
+  }
+  openSheet(action) {
+    this.root.querySelector(".stitle-main").textContent = action.button;
+    this.sbody.innerHTML = action.sections.map(s => `
+      <div class="stitle">${esc(s.title)}</div>
+      ${s.rows.map(r => `<label><span class="txt"><div class="t">${esc(r.title)}</div>${r.description ? `<div class="d">${esc(r.description)}</div>` : ""}</span>
+        <input type="radio" name="row-${this.role}" value="${esc(r.id)}" data-title="${esc(r.title)}"></label>`).join("")}`).join("");
+    this.ssend.disabled = true;
+    this.sheetBg.classList.add("on"); this.sheet.classList.add("on");
+  }
+  closeSheet() { this.sheetBg.classList.remove("on"); this.sheet.classList.remove("on"); }
+
+  showStk(p) {
+    this.stk = p;
+    this.root.querySelector(".stk-text").innerHTML =
+      `Do you want to pay <b>Ksh ${Number(p.amount).toLocaleString("en-KE", { minimumFractionDigits: 2 })}</b> to <b>${esc(p.merchant)}</b> account no. <b>${esc(p.account)}</b>?<br><br>Enter M-PESA PIN:`;
+    const pin = this.root.querySelector(".pin"); pin.value = "";
+    setTimeout(() => { this.stkBg.classList.add("on"); this.setTyping(false); pin.focus(); }, 900);
+  }
+  async stkAnswer(action) {
+    const pin = this.root.querySelector(".pin");
+    if (action === "ok" && pin.value.length < 4) { pin.focus(); return this.toast("Enter a 4-digit PIN"); }
+    this.stkBg.classList.remove("on");
+    const fd = new FormData(); fd.append("checkout_id", this.stk.checkout_id); fd.append("action", action);
+    this.waiting = Date.now(); this.setTyping(true);
+    await fetch("api/stk/", { method: "POST", body: fd }).catch(() => this.toast("No connection"));
+    this.poll();
+  }
+}
+
+const phones = [new Phone("farmer")];
+if (CONFIG.agrovet.phone && !CONFIG.single) phones.push(new Phone("agrovet"));
+const stage = document.getElementById("stage");
+phones.forEach(p => stage.appendChild(p.root));
+
+// Mobile tabs
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  phones.forEach(p => p.root.classList.toggle("hidden", p.role !== b.dataset.tab));
+});
+if (window.matchMedia("(max-width: 860px)").matches) phones.forEach(p => p.root.classList.toggle("hidden", p.role !== "farmer"));
+
+document.getElementById("reset").onclick = async () => {
+  if (!confirm("Restart the conversation from the beginning?")) return;
+  const fd = new FormData(); phones.forEach(p => fd.append("phone", p.phone));
+  await fetch("api/reset/", { method: "POST", body: fd });
+  location.reload();
+};
+
+phones.forEach(p => { p.poll(); setInterval(() => p.poll(), 1200); });
+</script>
+</body>
+</html>
